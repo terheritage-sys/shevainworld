@@ -2,61 +2,80 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Шевченко: Світовий каталог</title>
+    <title>Шевченко 360° | Світовий реєстр</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <style>
-        :root { --ukraine-blue: #0057b7; --ukraine-gold: #ffd700; }
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; }
-        #sidebar { width: 340px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 15px rgba(0,0,0,0.1); z-index: 1000; }
-        .header { padding: 25px 20px; background: var(--ukraine-blue); color: white; }
-        .filters { padding: 20px; overflow-y: auto; flex: 1; border-bottom: 1px solid #eee; }
-        .filter-group { margin-bottom: 18px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; }
-        #statistics-panel { padding: 20px; background: #fdfdfd; font-size: 13px; max-height: 300px; overflow-y: auto; }
-        .stat-list { list-style: none; padding: 0; margin: 0 0 15px; }
-        .stat-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f5f5f5; }
-        .stat-count { font-weight: bold; color: var(--ukraine-blue); background: #eef4fb; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-        #map { flex: 1; }
-        #counter { padding: 12px; background: #f8f9fa; text-align: center; font-weight: bold; font-size: 13px; color: var(--ukraine-blue); border-top: 1px solid #eee; }
-        #regionFilterGroup { display: none; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 18px; }
+        :root { --blue: #0057b7; --gold: #ffd700; --dark: #1a1a1a; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; overflow: hidden; }
         
-        /* POPUP DESIGN */
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
-        .leaflet-popup-content { margin: 0 !important; width: 400px !important; }
-        .popup-card { display: flex; height: 220px; }
-        .popup-info { flex: 1.2; padding: 15px; overflow-y: auto; }
-        .popup-photo-side { flex: 0.8; background: #333; position: relative; }
-        .popup-photo { width: 100%; height: 100%; object-fit: cover; }
-        .popup-title { margin: 0 0 4px; font-size: 16px; color: #222; font-weight: 800; }
-        .popup-tag { display: inline-block; background: var(--ukraine-gold); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; }
-        .popup-detail { font-size: 11px; color: #555; margin-bottom: 3px; }
-        .popup-desc { font-size: 11px; color: #444; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.4; }
+        /* СТРУКТУРА ПАНЕЛЕЙ */
+        #main-container { display: flex; height: 100vh; transition: 0.5s; }
+        #sidebar { width: 340px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 1000; }
+        #map { flex: 1; z-index: 1; }
+
+        /* СТОРІНКА ОБ'ЄКТА (ПРИХОВАНА ЗА ЗАМОВЧУВАННЯМ) */
+        #object-page { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; z-index: 2000; display: none; overflow-y: auto; 
+        }
+        .page-content { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .back-btn { background: var(--blue); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* ГАЛЕРЕЯ */
+        .gallery img { width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 10px; }
+        .historical-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* ПАСПОРТ */
+        .passport-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .passport-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .passport-table td:first-child { font-weight: bold; color: #777; width: 30%; }
+
+        /* КНОПКА МАРШРУТУ */
+        .route-btn { 
+            display: inline-block; background: #28a745; color: white; text-decoration: none; 
+            padding: 15px 30px; border-radius: 8px; font-weight: bold; text-align: center; width: 100%; box-sizing: border-box;
+        }
+
+        /* ІНШЕ */
+        .header { padding: 25px 20px; background: var(--blue); color: white; }
+        .filters { padding: 20px; overflow-y: auto; flex: 1; }
+        .filter-group { margin-bottom: 15px; }
+        label { font-size: 11px; font-weight: bold; color: #999; text-transform: uppercase; }
+        select, input { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <div class="header">
-        <h2 style="margin:0">Шевченко 360°</h2>
-        <p style="margin:5px 0 0; opacity:0.8; font-size:12px">Світовий реєстр пам'ятників</p>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="header">
+                <h2 style="margin:0">Шевченко 360°</h2>
+                <p style="margin:5px 0 0; font-size:12px; opacity:0.8">Світовий реєстр</p>
+            </div>
+            <div class="filters">
+                <div class="filter-group"><label>Пошук</label><input type="text" id="searchInput" placeholder="Місто, рік, автор..."></div>
+                <div class="filter-group"><label>Країна</label><select id="countryFilter"><option value="all">Усі країни</option></select></div>
+                <div class="filter-group"><label>Тип</label><select id="typeFilter"><option value="all">Усі типи</option></select></div>
+            </div>
+            <div id="counter" style="padding:15px; text-align:center; font-weight:bold; color:var(--blue)">Завантаження...</div>
+        </div>
+        <div id="map"></div>
     </div>
-    <div class="filters">
-        <div class="filter-group"><label>Пошук</label><input type="text" id="searchInput" placeholder="Місто, автор, рік..."></div>
-        <div class="filter-group"><label>Країна</label><select id="countryFilter"><option value="all">Усі країни</option></select></div>
-        <div id="regionFilterGroup" class="filter-group"><label>Область України</label><select id="regionFilter"><option value="all">Усі області</option></select></div>
-        <div class="filter-group"><label>Тип об'єкта</label><select id="typeFilter"><option value="all">Усі типи</option></select></div>
-        <div class="filter-group"><label>Вигляд (Таксономія)</label><select id="viewFilter"><option value="all">Усі варіанти</option></select></div>
+
+    <div id="object-page">
+        <div class="page-content">
+            <button class="back-btn" onclick="closeObjectPage()">← Назад до карти</button>
+            <div id="object-details"></div>
+        </div>
     </div>
-    <div id="statistics-panel"><h3>Статистика</h3><div id="stats-content">Завантаження...</div></div>
-    <div id="counter">Триває завантаження даних...</div>
-</div>
-<div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
@@ -66,140 +85,128 @@
     map.addLayer(markers);
 
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
-
     let dataItems = [];
 
-    // Функція безпечного отримання значень з об'єкта (ігнорує пробіли в назвах колонок)
-    function getValue(obj, key) {
-        const foundKey = Object.keys(obj).find(k => k.trim() === key.trim());
-        return foundKey ? obj[foundKey] : "";
+    // Функція безпечного читання даних
+    function getV(obj, key) {
+        const found = Object.keys(obj).find(k => k.trim() === key.trim());
+        return found ? obj[found] : "";
     }
 
+    // ЗАВАНТАЖЕННЯ ДАНИХ
     Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
+        download: true, header: true, skipEmptyLines: true,
         complete: function(results) {
-            console.log("Дані отримано. Кількість рядків:", results.data.length);
             dataItems = results.data;
             populateFilters();
             updateMap();
-        },
-        error: function(err) {
-            document.getElementById('counter').innerText = "Помилка доступу до даних!";
-            console.error(err);
+            checkUrlParams(); // Перевірка, чи ми на сторінці об'єкта
         }
     });
 
     function populateFilters() {
-        const countries = [...new Set(dataItems.map(i => getValue(i, 'Country')))].filter(Boolean).sort();
-        const regions = [...new Set(dataItems.map(i => getValue(i, 'Region')))].filter(Boolean).sort();
-        const types = [...new Set(dataItems.map(i => getValue(i, 'type')))].filter(Boolean).sort();
-        const views = [...new Set(dataItems.map(i => getValue(i, 'view')))].filter(Boolean).sort();
-
-        fillSelect('countryFilter', countries);
-        fillSelect('regionFilter', regions);
-        fillSelect('typeFilter', types);
-        fillSelect('viewFilter', views);
+        const countries = [...new Set(dataItems.map(i => getV(i, 'Country')))].filter(Boolean).sort();
+        const types = [...new Set(dataItems.map(i => getV(i, 'type')))].filter(Boolean).sort();
+        
+        const cFilter = document.getElementById('countryFilter');
+        countries.forEach(c => cFilter.innerHTML += `<option value="${c}">${c}</option>`);
+        
+        const tFilter = document.getElementById('typeFilter');
+        types.forEach(t => tFilter.innerHTML += `<option value="${t}">${t}</option>`);
     }
-
-    function fillSelect(id, list) {
-        const sel = document.getElementById(id);
-        list.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = opt.innerText = item;
-            sel.appendChild(opt);
-        });
-    }
-
-    document.getElementById('countryFilter').addEventListener('change', function() {
-        const isUa = this.value === 'Україна' || this.value === 'Ukraine';
-        document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
-        updateMap();
-    });
 
     function updateMap() {
         markers.clearLayers();
         const search = document.getElementById('searchInput').value.toLowerCase();
-        const fCountry = document.getElementById('countryFilter').value;
-        const fRegion = document.getElementById('regionFilter').value;
-        const fType = document.getElementById('typeFilter').value;
-        const fView = document.getElementById('viewFilter').value;
+        
+        dataItems.forEach(item => {
+            const lat = parseFloat(getV(item, 'lat').replace(',', '.'));
+            const lon = parseFloat(getV(item, 'lon').replace(',', '.'));
+            if (isNaN(lat)) return;
 
-        const filtered = dataItems.filter(item => {
-            const latRaw = getValue(item, 'lat');
-            const lonRaw = getValue(item, 'lon');
-            if (!latRaw || !lonRaw) return false;
+            const city = getV(item, 'City');
+            const id = getV(item, 'id');
 
-            const lat = parseFloat(latRaw.replace(',', '.'));
-            const lon = parseFloat(lonRaw.replace(',', '.'));
-            if (isNaN(lat) || isNaN(lon)) return false;
+            // Якщо є пошук, фільтруємо
+            if (search && !(`${city} ${getV(item, 'sculptor')}`).toLowerCase().includes(search)) return;
 
-            const country = getValue(item, 'Country');
-            const type = getValue(item, 'type');
-            const view = getValue(item, 'view');
-            const region = getValue(item, 'Region');
-            const city = getValue(item, 'City');
-
-            if (fCountry !== 'all' && country !== fCountry) return false;
-            if (fCountry.includes('Україна') && fRegion !== 'all' && region !== fRegion) return false;
-            if (fType !== 'all' && type !== fType) return false;
-            if (fView !== 'all' && view !== fView) return false;
-            
-            const pool = `${city} ${getValue(item, 'sculptor')} ${getValue(item, 'year_start')}`.toLowerCase();
-            return !search || pool.includes(search);
-        });
-
-        filtered.forEach(item => {
-            const lat = parseFloat(getValue(item, 'lat').replace(',', '.'));
-            const lon = parseFloat(getValue(item, 'lon').replace(',', '.'));
-            
-            const mainImg = getValue(item, 'Photo-GM') || getValue(item, 'other photo link');
-
-            const popupHtml = `
-                <div class="popup-card">
-                    <div class="popup-info">
-                        <span class="popup-tag">${getValue(item, 'type') || 'Об\'єкт'}</span>
-                        <h3 class="popup-title">${getValue(item, 'City') || 'Пам\'ятник'}</h3>
-                        <div class="popup-detail"><b>📍</b> ${getValue(item, 'Country')}${getValue(item, 'Region') ? ', ' + getValue(item, 'Region') : ''}</div>
-                        <div class="popup-detail"><b>📅</b> Рік: ${getValue(item, 'year_start') || '-'}</div>
-                        <div class="popup-detail"><b>👤</b> Автор: ${getValue(item, 'sculptor') || '-'}</div>
-                        <div class="popup-desc">${getValue(item, 'short description') || ''}</div>
-                    </div>
-                    <div class="popup-photo-side">
-                        ${mainImg ? `<img src="${mainImg}" class="popup-photo">` : `<div style="color:white;text-align:center;padding:50px 10px;font-size:10px">Фото відсутнє</div>`}
-                    </div>
-                </div>
-            `;
-            const m = L.marker([lat, lon]).bindPopup(popupHtml);
+            const m = L.marker([lat, lon]);
+            m.bindPopup(`
+                <b>${city}</b><br>${getV(item, 'Country')}<br><br>
+                <button onclick="openObjectPage('${id}')" style="width:100%; cursor:pointer">Переглянути картку</button>
+            `);
             markers.addLayer(m);
         });
-
-        document.getElementById('counter').innerText = `Відображено: ${filtered.length}`;
-        updateStats(filtered);
+        document.getElementById('counter').innerText = `Знайдено: ${dataItems.length}`;
     }
 
-    function updateStats(filtered) {
-        const typeStats = {};
-        const countryStats = {};
-        filtered.forEach(item => {
-            const t = getValue(item, 'type') || 'Інше';
-            const c = getValue(item, 'Country') || 'Інше';
-            typeStats[t] = (typeStats[t] || 0) + 1;
-            countryStats[c] = (countryStats[c] || 0) + 1;
-        });
-        let html = '<strong>За типами:</strong><ul class="stat-list">';
-        Object.entries(typeStats).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => html += `<li>${k}<span class="stat-count">${v}</span></li>`);
-        html += '</ul><strong>Топ країн:</strong><ul class="stat-list">';
-        Object.entries(countryStats).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([k,v]) => html += `<li>${k}<span class="stat-count">${v}</span></li>`);
-        html += '</ul>';
-        document.getElementById('stats-content').innerHTML = html;
+    // РОБОТА ЗІ СТОРІНКОЮ ОБ'ЄКТА
+    function openObjectPage(id) {
+        const item = dataItems.find(i => getV(i, 'id') === id);
+        if (!item) return;
+
+        // Оновлюємо URL без перезавантаження
+        window.history.pushState({}, '', `?id=${id}`);
+        
+        const lat = getV(item, 'lat').replace(',', '.');
+        const lon = getV(item, 'lon').replace(',', '.');
+        const mainImg = getV(item, 'Photo-GM') || getV(item, 'other photo link');
+        const histImg = getV(item, 'other photo link');
+
+        const html = `
+            <h1>${getV(item, 'City')} — ${getV(item, 'Country')}</h1>
+            <div class="grid-layout">
+                <div class="gallery">
+                    <img src="${mainImg}" alt="Головне фото" onerror="this.style.display='none'">
+                    <div class="historical-grid">
+                        ${histImg ? `<img src="${histImg}" alt="Історичне фото">` : ''}
+                    </div>
+                </div>
+                <div class="info">
+                    <div style="background:#ffd700; padding:10px; border-radius:5px; font-weight:bold; margin-bottom:20px">
+                        ТИП: ${getV(item, 'type')}
+                    </div>
+                    
+                    <h3>Паспорт об'єкта</h3>
+                    <table class="passport-table">
+                        <tr><td>Матеріал</td><td>${getV(item, 'material') || 'Не вказано'}</td></tr>
+                        <tr><td>Скульптор</td><td>${getV(item, 'sculptor') || 'н/д'}</td></tr>
+                        <tr><td>Архітектор</td><td>${getV(item, 'arkhitector') || 'н/д'}</td></tr>
+                        <tr><td>Рік встановлення</td><td>${getV(item, 'year_start') || 'н/д'}</td></tr>
+                        <tr><td>Регіон</td><td>${getV(item, 'Region') || '-'}</td></tr>
+                    </table>
+
+                    <h3>Опис</h3>
+                    <div style="line-height:1.6; color:#444; margin-bottom:30px">
+                        ${getV(item, 'short description') || 'Опис очікується...'}
+                    </div>
+
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" 
+                       target="_blank" class="route-btn">
+                       🚀 Побудувати маршрут
+                    </a>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('object-details').innerHTML = html;
+        document.getElementById('object-page').style.display = 'block';
     }
 
-    ['searchInput', 'countryFilter', 'regionFilter', 'typeFilter', 'viewFilter'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateMap);
-        document.getElementById(id).addEventListener('input', updateMap);
-    });
+    function closeObjectPage() {
+        window.history.pushState({}, '', window.location.pathname);
+        document.getElementById('object-page').style.display = 'none';
+    }
+
+    function checkUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (id) openObjectPage(id);
+    }
+
+    // Слухачі фільтрів
+    document.getElementById('searchInput').addEventListener('input', updateMap);
+    document.getElementById('countryFilter').addEventListener('change', updateMap);
 </script>
 </body>
 </html>
