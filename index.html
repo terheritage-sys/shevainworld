@@ -7,75 +7,97 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; }
-        #sidebar { width: 320px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .header { padding: 20px; background: #0057b7; color: white; }
-        .filters { padding: 20px; overflow-y: auto; flex: 1; }
-        .filter-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        #map { flex: 1; }
-        #counter { padding: 15px; background: #eee; text-align: center; font-weight: bold; font-size: 14px; color: #0057b7; }
+        :root { --ukraine-blue: #0057b7; --ukraine-gold: #ffd700; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; }
         
-        /* Стиль для прихованого фільтра областей */
-        #regionFilterGroup { 
-            display: none; 
-            background: #f0f7ff; 
-            padding: 10px; 
-            border-radius: 5px; 
-            border: 1px dashed #0057b7;
-            margin-top: -10px;
-            margin-bottom: 20px;
-        }
+        /* SIDEBAR */
+        #sidebar { width: 340px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 15px rgba(0,0,0,0.1); z-index: 1000; }
+        .header { padding: 25px 20px; background: var(--ukraine-blue); color: white; }
+        .filters { padding: 20px; overflow-y: auto; flex: 1; border-bottom: 1px solid #eee; }
+        .filter-group { margin-bottom: 18px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; }
+        select:focus, input:focus { border-color: var(--ukraine-blue); }
+        
+        /* STATISTICS */
+        #statistics-panel { padding: 20px; background: #fdfdfd; font-size: 13px; max-height: 300px; overflow-y: auto; }
+        #statistics-panel h3 { margin: 0 0 12px; font-size: 14px; border-bottom: 2px solid var(--ukraine-gold); display: inline-block; }
+        .stat-list { list-style: none; padding: 0; margin: 0 0 15px; }
+        .stat-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f5f5f5; }
+        .stat-count { font-weight: bold; color: var(--ukraine-blue); background: #eef4fb; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+        #map { flex: 1; }
+        #counter { padding: 12px; background: #f8f9fa; text-align: center; font-weight: bold; font-size: 13px; color: var(--ukraine-blue); border-top: 1px solid #eee; }
+        #regionFilterGroup { display: none; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 18px; }
+
+        /* POPUP DESIGN */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .leaflet-popup-content { margin: 0 !important; width: 420px !important; }
+        
+        .popup-card { display: flex; height: 240px; }
+        .popup-info { flex: 1.2; padding: 18px; display: flex; flex-direction: column; overflow-y: auto; }
+        .popup-photo-side { flex: 0.8; background: #333; position: relative; overflow: hidden; }
+        
+        .popup-photo { width: 100%; height: 100%; object-fit: cover; }
+        .popup-title { margin: 0 0 4px; font-size: 18px; color: #222; font-weight: 800; }
+        .popup-tag { display: inline-block; background: var(--ukraine-gold); color: #000; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .popup-detail { font-size: 12px; color: #555; margin-bottom: 4px; line-height: 1.4; }
+        .popup-desc { font-size: 12px; color: #444; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-style: italic; line-height: 1.5; }
+        .no-img { display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 11px; text-align: center; background: #e0e0e0; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
     <div class="header">
-        <h2 style="margin:0">Кобзар по світу</h2>
-        <p style="margin:5px 0 0; opacity:0.8; font-size:12px">Інтерактивна мапа пам'ятників</p>
+        <h2 style="margin:0">Шевченко 360°</h2>
+        <p style="margin:5px 0 0; opacity:0.8; font-size:12px">Світовий реєстр пам'ятників</p>
     </div>
     
     <div class="filters">
         <div class="filter-group">
-            <label>Пошук</label>
-            <input type="text" id="searchInput" placeholder="Місто, автор, рік...">
+            <label>Пошук за ключовим словом</label>
+            <input type="text" id="searchInput" placeholder="Місто, скульптор, рік...">
         </div>
-
         <div class="filter-group">
             <label>Країна</label>
             <select id="countryFilter"><option value="all">Усі країни</option></select>
         </div>
-
-        <div id="regionFilterGroup" class="filter-group">
+        <div id="regionFilterGroup">
             <label>Область України</label>
             <select id="regionFilter"><option value="all">Усі області</option></select>
         </div>
-
         <div class="filter-group">
             <label>Тип об'єкта</label>
             <select id="typeFilter"><option value="all">Усі типи</option></select>
         </div>
-
         <div class="filter-group">
-            <label>Вигляд Кобзаря</label>
+            <label>Вигляд (Таксономія)</label>
             <select id="viewFilter"><option value="all">Усі варіанти</option></select>
         </div>
     </div>
-    <div id="counter">Завантаження...</div>
+
+    <div id="statistics-panel">
+        <h3>Статистика вибірки</h3>
+        <div id="stats-content">Завантаження даних...</div>
+    </div>
+
+    <div id="counter">Готово до роботи</div>
 </div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
     const map = L.map('map').setView([48.5, 31.2], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
-    const markers = L.markerClusterGroup();
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    
+    const markers = L.markerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: false });
     map.addLayer(markers);
 
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
@@ -114,70 +136,25 @@
         });
     }
 
-    // ЛОГІКА ПОКАЗУ ОБЛАСТЕЙ
     document.getElementById('countryFilter').addEventListener('change', function() {
-        const regionGroup = document.getElementById('regionFilterGroup');
-        if (this.value === 'Україна' || this.value === 'Ukraine') {
-            regionGroup.style.display = 'block';
-        } else {
-            regionGroup.style.display = 'none';
-            document.getElementById('regionFilter').value = 'all'; // Скидаємо фільтр області
-        }
+        const isUa = this.value === 'Україна' || this.value === 'Ukraine';
+        document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
+        if (!isUa) document.getElementById('regionFilter').value = 'all';
         updateMap();
     });
 
-    function updateMap() {
-        markers.clearLayers();
-        const s = document.getElementById('searchInput').value.toLowerCase();
-        const fCountry = document.getElementById('countryFilter').value;
-        const fRegion = document.getElementById('regionFilter').value;
-        const fType = document.getElementById('typeFilter').value;
-        const fView = document.getElementById('viewFilter').value;
-
-        let count = 0;
-
-        dataItems.forEach(item => {
-            const lat = parseFloat(item.lat ? item.lat.replace(',', '.') : 0);
-            const lon = parseFloat(item.lon ? item.lon.replace(',', '.') : 0);
-            if (!lat || !lon) return;
-
-            // Фільтрація
-            if (fCountry !== 'all' && item.Country !== fCountry) return;
-            // Фільтр по області (працює лише якщо країна - Україна)
-            if (fCountry === 'Україна' && fRegion !== 'all' && item.Region !== fRegion) return;
-            
-            if (fType !== 'all' && item.type !== fType) return;
-            if (fView !== 'all' && item.view !== fView) return;
-            
-            const searchPool = `${item.title} ${item.City} ${item.sculptor} ${item.Region}`.toLowerCase();
-            if (s && !searchPool.includes(s)) return;
-
-            const marker = L.marker([lat, lon]);
-            marker.bindPopup(`
-                <div style="width:220px; font-size:13px">
-                    <b style="font-size:15px; color:#0057b7">${item.City || 'Без назви'}</b><br>
-                    <small>${item.Region ? item.Region + ' обл., ' : ''}${item.Country}</small>
-                    <hr style="border:0; border-top:1px solid #eee">
-                    <b>Рік:</b> ${item.year_start || 'н/д'}<br>
-                    <b>Тип:</b> ${item.type || 'н/д'}<br>
-                    <b>Автор:</b> ${item.sculptor || 'н/д'}<br>
-                    <p style="margin-top:8px; font-style:italic">${item['short description'] || ''}</p>
-                    ${item['Photo-GM-link'] ? `<a href="${item['Photo-GM-link']}" target="_blank" style="color:#0057b7">Переглянути фото</a>` : ''}
-                </div>
-            `);
-            markers.addLayer(marker);
-            count++;
+    function updateStats(filtered) {
+        const typeStats = {};
+        const countryStats = {};
+        
+        filtered.forEach(item => {
+            typeStats[item.type] = (typeStats[item.type] || 0) + 1;
+            countryStats[item.Country] = (countryStats[item.Country] || 0) + 1;
         });
 
-        document.getElementById('counter').innerText = `Знайдено: ${count}`;
-    }
+        const sortedTypes = Object.entries(typeStats).sort((a,b) => b[1] - a[1]);
+        const sortedCountries = Object.entries(countryStats).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-    // Слухачі для всіх інших фільтрів
-    document.getElementById('searchInput').addEventListener('input', updateMap);
-    document.getElementById('regionFilter').addEventListener('change', updateMap);
-    document.getElementById('typeFilter').addEventListener('change', updateMap);
-    document.getElementById('viewFilter').addEventListener('change', updateMap);
-</script>
-
-</body>
-</html>
+        let html = '<strong>За типами:</strong><ul class="stat-list">';
+        sortedTypes.forEach(([k, v]) => html += `<li>${k} <span class="stat-count">${v}</span></li>`);
+        html += '</ul><strong>
