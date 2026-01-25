@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Шевченко: Світовий каталог</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; }
+        #sidebar { width: 320px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .header { padding: 20px; background: #0057b7; color: white; }
+        .filters { padding: 20px; overflow-y: auto; flex: 1; }
+        .filter-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px; color: #555; text-transform: uppercase; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        #map { flex: 1; }
+        #counter { padding: 15px; background: #eee; text-align: center; font-weight: bold; font-size: 14px; }
+        .error-msg { color: red; padding: 20px; font-size: 13px; line-height: 1.4; display: none; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="header">
+        <h2 style="margin:0">Кобзар по світу</h2>
+        <p style="margin:5px 0 0; opacity:0.8; font-size:12px">Інтерактивна мапа пам'ятників</p>
+    </div>
+    
+    <div id="error-box" class="error-msg"></div>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label>Пошук</label>
+            <input type="text" id="searchInput" placeholder="Місто, автор, рік...">
+        </div>
+        <div class="filter-group">
+            <label>Країна</label>
+            <select id="countryFilter"><option value="all">Усі країни</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Тип</label>
+            <select id="typeFilter"><option value="all">Усі типи</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Вигляд (фішка)</label>
+            <select id="viewFilter"><option value="all">Усі варіанти</option></select>
+        </div>
+    </div>
+    <div id="counter">Завантаження даних...</div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+    const map = L.map('map').setView([48.5, 31.2], 4);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    const markers = L.markerClusterGroup();
+    map.addLayer(markers);
+
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
+
+    let dataItems = [];
+
+    // Функція для показу помилок
+    function showError(text) {
+        const box = document.getElementById('error-box');
+        box.style.display = 'block';
+        box.innerHTML = text;
+        document.getElementById('counter').innerText = "Помилка.";
+    }
+
+    Papa.parse(csvUrl, {
+        download: true,
+        header: true, // ВИКОРИСТОВУЄМО ЗАГОЛОВКИ
+        skipEmptyLines: true,
+        complete: function(results) {
+            dataItems = results.data;
+            console.log("Дані завантажено:", dataItems.length);
+            populateFilters();
+            updateMap();
+        },
+        error: function(err) {
+            showError("<b>Помилка завантаження:</b> Можливо, браузер блокує запит. Спробуйте завантажити цей файл на GitHub або відкрити через локальний сервер (Live Server).");
+        }
+    });
+
+    function populateFilters() {
+        const countries = [...new Set(dataItems.map(i => i.Country))].filter(Boolean).sort();
+        const types = [...new Set(dataItems.map(i => i.type))].filter(Boolean).sort();
+        const views = [...new Set(dataItems.map(i => i.view))].filter(Boolean).sort();
+
+        fillSelect('countryFilter', countries);
+        fillSelect('typeFilter', types);
+        fillSelect('viewFilter', views);
+    }
+
+    function fillSelect(id, list) {
+        const sel = document.getElementById(id);
+        list.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = opt.innerText = item;
+            sel.appendChild(opt);
+        });
+    }
+
+    function updateMap() {
+        markers.clearLayers();
+        const s = document.getElementById('searchInput').value.toLowerCase();
+        const fCountry = document.getElementById('countryFilter').value;
+        const fType = document.getElementById('typeFilter').value;
+        const fView = document.getElementById('viewFilter').value;
+
+        let count = 0;
+
+        dataItems.forEach(item => {
+            // Перевірка координат
+            const lat = parseFloat(item.lat ? item.lat.replace(',', '.') : 0);
+            const lon = parseFloat(item.lon ? item.lon.replace(',', '.') : 0);
+            if (!lat || !lon) return;
+
+            // Фільтрація
+            if (fCountry !== 'all' && item.Country !== fCountry) return;
+            if (fType !== 'all' && item.type !== fType) return;
+            if (fView !== 'all' && item.view !== fView) return;
+            
+            const searchPool = `${item.title} ${item.City} ${item.sculptor} ${item.year_start}`.toLowerCase();
+            if (s && !searchPool.includes(s)) return;
+
+            // Створення маркера
+            const marker = L.marker([lat, lon]);
+            marker.bindPopup(`
+                <div style="width:200px">
+                    <b style="font-size:14px">${item.City}</b><br>
+                    <span style="color:#0057b7; font-size:11px"><b>${item.Country}</b></span><br>
+                    <hr>
+                    <small>Рік: ${item.year_start || 'н/д'}</small><br>
+                    <small>Тип: ${item.type}</small><br>
+                    <small>Автор: ${item.sculptor || 'н/д'}</small><br>
+                    <p style="font-size:12px; line-height:1.3">${item['short description'] || ''}</p>
+                </div>
+            `);
+            markers.addLayer(marker);
+            count++;
+        });
+
+        document.getElementById('counter').innerText = `Знайдено: ${count}`;
+    }
+
+    document.getElementById('searchInput').addEventListener('input', updateMap);
+    document.getElementById('countryFilter').addEventListener('change', updateMap);
+    document.getElementById('typeFilter').addEventListener('change', updateMap);
+    document.getElementById('viewFilter').addEventListener('change', updateMap);
+</script>
+
+</body>
+</html>
