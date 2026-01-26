@@ -20,10 +20,18 @@
         
         #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-bottom: 15px; }
 
-        #statistics-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; font-size: 13px; max-height: 250px; overflow-y: auto; }
-        .stat-list { list-style: none; padding: 0; margin: 5px 0; }
-        .stat-list li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #ccc; }
-        .stat-count { font-weight: bold; color: var(--blue); }
+        /* СТИЛІ ТЕГІВ-КНОПОК */
+        #statistics-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .stat-tag { 
+            background: #eee; padding: 6px 12px; border-radius: 20px; font-size: 12px; 
+            cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+            user-select: none; display: flex; align-items: center;
+        }
+        .stat-tag:hover { background: #e0e0e0; }
+        .stat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
+        .stat-tag .count { font-weight: bold; margin-left: 6px; opacity: 0.7; }
+        .stat-tag.active .count { opacity: 1; }
 
         /* ВАШ УЛЮБЛЕНИЙ ПОПАП */
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
@@ -58,12 +66,12 @@
         <div class="filter-group"><label>Пошук</label><input type="text" id="search" placeholder="Місто, автор, рік..."></div>
         <div class="filter-group"><label>Країна</label><select id="fCountry"><option value="all">Усі країни</option></select></div>
         <div id="regionFilterGroup"><label>Область України</label><select id="fRegion"><option value="all">Усі області</option></select></div>
-        <div class="filter-group"><label>Тип</label><select id="fType"><option value="all">Усі типи</option></select></div>
-        <div class="filter-group"><label>Вигляд</label><select id="fView"><option value="all">Усі варіанти</option></select></div>
+        <div class="filter-group"><label>Вигляд (Таксономія)</label><select id="fView"><option value="all">Усі варіанти</option></select></div>
     </div>
     <div id="statistics-panel">
-        <h3 style="margin:0; font-size:14px">Статистика вибірки</h3>
-        <div id="stats-content">Завантаження...</div>
+        <label>Тип об'єкта (Статистика)</label>
+        <div id="tag-container" class="tag-container">
+            </div>
     </div>
     <div id="counter">Завантаження...</div>
 </div>
@@ -89,6 +97,7 @@
 
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
     let rawData = [];
+    let activeTypeFilter = 'all';
 
     const getValue = (obj, key) => {
         const foundKey = Object.keys(obj).find(k => k.trim() === key.trim());
@@ -106,20 +115,16 @@
     function init() {
         const countries = [...new Set(rawData.map(i => getValue(i, 'Country')))].filter(Boolean).sort();
         const regions = [...new Set(rawData.map(i => getValue(i, 'Region')))].filter(Boolean).sort();
-        const types = [...new Set(rawData.map(i => getValue(i, 'type')))].filter(Boolean).sort();
         const views = [...new Set(rawData.map(i => getValue(i, 'view')))].filter(Boolean).sort();
         
         const fc = document.getElementById('fCountry');
         const fr = document.getElementById('fRegion');
-        const ft = document.getElementById('fType');
         const fv = document.getElementById('fView');
 
         countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
         regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
-        types.forEach(t => ft.innerHTML += `<option value="${t}">${t}</option>`);
         views.forEach(v => fv.innerHTML += `<option value="${v}">${v}</option>`);
         
-        // Обробник країни для показу областей
         fc.addEventListener('change', () => {
             const isUa = fc.value === 'Україна' || fc.value === 'Ukraine';
             document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
@@ -127,8 +132,7 @@
             renderMap();
         });
 
-        // Слухачі для всіх інших фільтрів
-        [fr, ft, fv].forEach(el => el.addEventListener('change', renderMap));
+        [fr, fv].forEach(el => el.addEventListener('change', renderMap));
         document.getElementById('search').addEventListener('input', renderMap);
 
         renderMap();
@@ -142,7 +146,6 @@
         const s = document.getElementById('search').value.toLowerCase();
         const fc = document.getElementById('fCountry').value;
         const fr = document.getElementById('fRegion').value;
-        const ft = document.getElementById('fType').value;
         const fv = document.getElementById('fView').value;
 
         const filtered = rawData.filter(item => {
@@ -151,7 +154,7 @@
             
             if (fc !== 'all' && getValue(item, 'Country') !== fc) return false;
             if (fc.includes('Україна') && fr !== 'all' && getValue(item, 'Region') !== fr) return false;
-            if (ft !== 'all' && getValue(item, 'type') !== ft) return false;
+            if (activeTypeFilter !== 'all' && getValue(item, 'type') !== activeTypeFilter) return false;
             if (fv !== 'all' && getValue(item, 'view') !== fv) return false;
             
             const pool = `${getValue(item,'City')} ${getValue(item,'sculptor')} ${getValue(item,'title')}`.toLowerCase();
@@ -183,17 +186,31 @@
         });
 
         document.getElementById('counter').innerText = `Знайдено: ${filtered.length}`;
-        updateStats(filtered);
+        updateTags(filtered);
     }
 
-    function updateStats(filtered) {
-        const typeStats = {};
-        filtered.forEach(i => { const t = getValue(i, 'type') || 'Інше'; typeStats[t] = (typeStats[t] || 0) + 1; });
-        let html = '<ul class="stat-list">';
-        Object.entries(typeStats).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
-            html += `<li><span>${k}</span><span class="stat-count">${v}</span></li>`;
+    function updateTags(filtered) {
+        // Рахуємо статистику лише для поточної вибірки (або можна для всієї бази, але логічніше для поточної)
+        const typeCounts = {};
+        filtered.forEach(i => {
+            const t = getValue(i, 'type') || 'Інше';
+            typeCounts[t] = (typeCounts[t] || 0) + 1;
         });
-        document.getElementById('stats-content').innerHTML = html + '</ul>';
+
+        const container = document.getElementById('tag-container');
+        container.innerHTML = '';
+
+        Object.entries(typeCounts).sort((a,b) => b[1] - a[1]).forEach(([type, count]) => {
+            const tag = document.createElement('div');
+            tag.className = `stat-tag ${activeTypeFilter === type ? 'active' : ''}`;
+            tag.innerHTML = `${type} <span class="count">${count}</span>`;
+            
+            tag.onclick = () => {
+                activeTypeFilter = (activeTypeFilter === type) ? 'all' : type;
+                renderMap();
+            };
+            container.appendChild(tag);
+        });
     }
 
     function openPage(id) {
