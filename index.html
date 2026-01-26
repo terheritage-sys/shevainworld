@@ -19,27 +19,34 @@
         label { display: block; font-size: 11px; color: #999; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
         
-        #statistics-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; font-size: 13px; max-height: 200px; overflow-y: auto; }
+        /* Спеціальний стиль для фільтра областей */
+        #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-top: -5px; margin-bottom: 15px; }
+
+        #statistics-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; font-size: 13px; max-height: 250px; overflow-y: auto; }
         .stat-list { list-style: none; padding: 0; margin: 5px 0; }
         .stat-list li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #ccc; }
         .stat-count { font-weight: bold; color: var(--blue); }
 
-        /* MAP POPUP */
+        /* ВАШ УЛЮБЛЕНИЙ ПОПАП */
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
-        .leaflet-popup-content { margin: 0 !important; width: 380px !important; }
-        .pop-card { display: flex; height: 180px; }
-        .pop-info { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
-        .pop-photo { width: 140px; object-fit: cover; background: #eee; }
-        .pop-btn { background: var(--blue); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        .leaflet-popup-content { margin: 0 !important; width: 400px !important; }
+        .popup-card { display: flex; height: 240px; }
+        .popup-info { flex: 1.2; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        .popup-photo-side { flex: 0.8; background: #333; position: relative; }
+        .popup-photo { width: 100%; height: 100%; object-fit: cover; }
+        .popup-title { margin: 0 0 4px; font-size: 16px; color: #222; font-weight: 800; }
+        .popup-tag { display: inline-block; background: var(--gold); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; align-self: flex-start; }
+        .popup-detail { font-size: 11px; color: #555; margin-bottom: 3px; }
+        .popup-desc { font-size: 11px; color: #444; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.4; flex-grow: 1; }
+        .more-btn { background: var(--blue); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-size: 11px; font-weight: bold; }
 
-        /* FULL PAGE OBJECT */
+        /* СТОРІНКА ОБ'ЄКТА */
         #object-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; overflow-y: auto; }
         .page-content { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
-        .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; margin-top: 20px; }
+        .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; }
         .main-img-full { width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .passport-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .passport-table td { padding: 12px; border-bottom: 1px solid #eee; }
-        .passport-table td:first-child { font-weight: bold; color: #666; width: 35%; }
         .route-btn { display: block; background: #28a745; color: white; text-align: center; padding: 18px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin-top: 25px; }
         
         #map { flex: 1; }
@@ -51,11 +58,16 @@
 <div id="sidebar">
     <div class="header">
         <h2 style="margin:0">Шевченко 360°</h2>
-        <p style="margin:5px 0 0; font-size:12px; opacity:0.8">Світовий реєстр пам'ятників</p>
     </div>
     <div class="filters">
         <div class="filter-group"><label>Пошук</label><input type="text" id="search" placeholder="Місто, автор, рік..."></div>
         <div class="filter-group"><label>Країна</label><select id="fCountry"><option value="all">Усі країни</option></select></div>
+        
+        <div id="regionFilterGroup">
+            <label>Область України</label>
+            <select id="fRegion"><option value="all">Усі області</option></select>
+        </div>
+
         <div class="filter-group"><label>Тип</label><select id="fType"><option value="all">Усі типи</option></select></div>
         <div class="filter-group"><label>Вигляд</label><select id="fView"><option value="all">Усі варіанти</option></select></div>
     </div>
@@ -63,20 +75,20 @@
         <h3 style="margin:0; font-size:14px">Статистика вибірки</h3>
         <div id="stats-content">Завантаження...</div>
     </div>
-    <div id="counter">Триває аналіз даних...</div>
+    <div id="counter">Триває завантаження...</div>
 </div>
 
 <div id="map"></div>
 
 <div id="object-page">
     <div class="page-content">
-        <button onclick="closePage()" style="cursor:pointer; padding:10px 20px; border:none; background:#eee; border-radius:5px; font-weight:bold;">← Повернутися до мапи</button>
+        <button onclick="closePage()" style="cursor:pointer; padding:10px 20px; border:none; background:#eee; border-radius:5px; margin-bottom:20px;">← До мапи</button>
         <div id="details"></div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/markercluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
@@ -86,123 +98,63 @@
     map.addLayer(markers);
 
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
-    let data = [];
+    let rawData = [];
 
-    const get = (row, key) => {
-        const k = Object.keys(row).find(k => k.trim() === key.trim());
-        return k ? row[k] : '';
+    const getValue = (obj, key) => {
+        const foundKey = Object.keys(obj).find(k => k.trim() === key.trim());
+        return foundKey ? obj[foundKey] : "";
     };
 
     Papa.parse(csvUrl, {
         download: true, header: true, skipEmptyLines: true,
-        complete: (res) => {
-            data = res.data;
+        complete: (results) => {
+            rawData = results.data;
             init();
         }
     });
 
     function init() {
-        const countries = [...new Set(data.map(i => get(i, 'Country')))].filter(Boolean).sort();
-        const types = [...new Set(data.map(i => get(i, 'type')))].filter(Boolean).sort();
-        const views = [...new Set(data.map(i => get(i, 'view')))].filter(Boolean).sort();
+        const countries = [...new Set(rawData.map(i => getValue(i, 'Country')))].filter(Boolean).sort();
+        const regions = [...new Set(rawData.map(i => getValue(i, 'Region')))].filter(Boolean).sort();
+        const types = [...new Set(rawData.map(i => getValue(i, 'type')))].filter(Boolean).sort();
+        const views = [...new Set(rawData.map(i => getValue(i, 'view')))].filter(Boolean).sort();
         
-        countries.forEach(c => document.getElementById('fCountry').innerHTML += `<option value="${c}">${c}</option>`);
-        types.forEach(t => document.getElementById('fType').innerHTML += `<option value="${t}">${t}</option>`);
-        views.forEach(v => document.getElementById('fView').innerHTML += `<option value="${v}">${v}</option>`);
+        const fc = document.getElementById('fCountry');
+        countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
         
-        render();
-        const urlId = new URLSearchParams(window.location.search).get('id');
-        if (urlId) openPage(urlId);
+        const fr = document.getElementById('fRegion');
+        regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
+
+        document.getElementById('fType').innerHTML += types.map(t => `<option value="${t}">${t}</option>`).join('');
+        document.getElementById('fView').innerHTML += views.map(v => `<option value="${v}">${v}</option>`).join('');
+        
+        fc.addEventListener('change', function() {
+            const isUa = this.value === 'Україна' || this.value === 'Ukraine';
+            document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
+            if (!isUa) document.getElementById('fRegion').value = 'all';
+            renderMap();
+        });
+
+        renderMap();
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (id) openPage(id);
     }
 
-    function render() {
+    function renderMap() {
         markers.clearLayers();
         const s = document.getElementById('search').value.toLowerCase();
         const fc = document.getElementById('fCountry').value;
+        const fr = document.getElementById('fRegion').value;
         const ft = document.getElementById('fType').value;
         const fv = document.getElementById('fView').value;
 
-        const filtered = data.filter(item => {
-            const lat = parseFloat(get(item, 'lat').replace(',', '.'));
+        const filtered = rawData.filter(item => {
+            const lat = parseFloat(getValue(item, 'lat').replace(',', '.'));
             if (isNaN(lat)) return false;
-            if (fc !== 'all' && get(item, 'Country') !== fc) return false;
-            if (ft !== 'all' && get(item, 'type') !== ft) return false;
-            if (fv !== 'all' && get(item, 'view') !== fv) return false;
-            const pool = `${get(item,'City')} ${get(item,'sculptor')} ${get(item,'title')}`.toLowerCase();
+            if (fc !== 'all' && getValue(item, 'Country') !== fc) return false;
+            if (fc.includes('Україна') && fr !== 'all' && getValue(item, 'Region') !== fr) return false;
+            if (ft !== 'all' && getValue(item, 'type') !== ft) return false;
+            if (fv !== 'all' && getValue(item, 'view') !== fv) return false;
+            const pool = `${getValue(item,'City')} ${getValue(item,'sculptor')} ${getValue(item,'title')}`.toLowerCase();
             return !s || pool.includes(s);
         });
-
-        filtered.forEach(item => {
-            const lat = parseFloat(get(item, 'lat').replace(',', '.'));
-            const lon = parseFloat(get(item, 'lon').replace(',', '.'));
-            const img = get(item, 'Photo-GM') || get(item, 'other photo link');
-            
-            const m = L.marker([lat, lon]).bindPopup(`
-                <div class="pop-card">
-                    <div class="pop-info">
-                        <div>
-                            <strong style="font-size:16px">${get(item, 'City')}</strong><br>
-                            <small>${get(item, 'Country')}</small>
-                        </div>
-                        <button class="pop-btn" onclick="openPage('${get(item, 'id')}')">Детальніше</button>
-                    </div>
-                    <img src="${img}" class="pop-photo" onerror="this.src='https://via.placeholder.com/150?text=No+Photo'">
-                </div>
-            `);
-            markers.addLayer(m);
-        });
-
-        document.getElementById('counter').innerText = `Знайдено: ${filtered.length}`;
-        updateStats(filtered);
-    }
-
-    function updateStats(filtered) {
-        const types = {};
-        filtered.forEach(i => { const t = get(i, 'type') || 'Інше'; types[t] = (types[t] || 0) + 1; });
-        let html = '<ul class="stat-list">';
-        Object.entries(types).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
-            html += `<li><span>${k}</span><span class="stat-count">${v}</span></li>`;
-        });
-        document.getElementById('stats-content').innerHTML = html + '</ul>';
-    }
-
-    function openPage(id) {
-        const item = data.find(i => get(i, 'id') === id);
-        if (!item) return;
-        window.history.pushState({}, '', `?id=${id}`);
-        const img = get(item, 'Photo-GM') || get(item, 'other photo link');
-        
-        document.getElementById('details').innerHTML = `
-            <div class="grid-main">
-                <div><img src="${img}" class="main-img-full" onerror="this.src='https://via.placeholder.com/600x400?text=Фото+відсутнє'"></div>
-                <div>
-                    <h1 style="margin-top:0">${get(item, 'City')}</h1>
-                    <div style="background:var(--gold); display:inline-block; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:12px; margin-bottom:20px;">
-                        ${get(item, 'type').toUpperCase()}
-                    </div>
-                    <table class="passport-table">
-                        <tr><td>Країна / Регіон</td><td>${get(item, 'Country')}, ${get(item, 'Region')}</td></tr>
-                        <tr><td>Автор (скульптор)</td><td>${get(item, 'sculptor') || 'н/д'}</td></tr>
-                        <tr><td>Рік встановлення</td><td>${get(item, 'year_start') || 'н/д'}</td></tr>
-                        <tr><td>Матеріал</td><td>${get(item, 'material') || 'н/д'}</td></tr>
-                        <tr><td>Вигляд</td><td>${get(item, 'view') || 'н/д'}</td></tr>
-                    </table>
-                    <h3 style="margin-top:30px">Опис об'єкта</h3>
-                    <p style="line-height:1.7; color:#333;">${get(item, 'short description')}</p>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${get(item,'lat')},${get(item,'lon')}" target="_blank" class="route-btn">🗺️ Побудувати маршрут</a>
-                </div>
-            </div>
-        `;
-        document.getElementById('object-page').style.display = 'block';
-    }
-
-    function closePage() {
-        window.history.pushState({}, '', window.location.pathname);
-        document.getElementById('object-page').style.display = 'none';
-    }
-
-    document.getElementById('search').oninput = render;
-    ['fCountry', 'fType', 'fView'].forEach(id => document.getElementById(id).onchange = render);
-</script>
-</body>
-</html>
