@@ -11,7 +11,6 @@
         :root { --blue: #0057b7; --gold: #ffd700; --bg: #f4f7f6; }
         body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; overflow: hidden; background: var(--bg); }
         
-        /* SIDEBAR */
         #sidebar { width: 340px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 15px rgba(0,0,0,0.1); }
         .header { padding: 20px; background: var(--blue); color: white; }
         .filters { padding: 15px; overflow-y: auto; flex: 1; }
@@ -19,8 +18,7 @@
         label { display: block; font-size: 11px; color: #999; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
         
-        /* Спеціальний стиль для фільтра областей */
-        #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-top: -5px; margin-bottom: 15px; }
+        #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-bottom: 15px; }
 
         #statistics-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; font-size: 13px; max-height: 250px; overflow-y: auto; }
         .stat-list { list-style: none; padding: 0; margin: 5px 0; }
@@ -40,7 +38,6 @@
         .popup-desc { font-size: 11px; color: #444; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.4; flex-grow: 1; }
         .more-btn { background: var(--blue); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; margin-top: 8px; font-size: 11px; font-weight: bold; }
 
-        /* СТОРІНКА ОБ'ЄКТА */
         #object-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; overflow-y: auto; }
         .page-content { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
         .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; }
@@ -56,18 +53,11 @@
 <body>
 
 <div id="sidebar">
-    <div class="header">
-        <h2 style="margin:0">Шевченко 360°</h2>
-    </div>
+    <div class="header"><h2 style="margin:0">Шевченко 360°</h2></div>
     <div class="filters">
         <div class="filter-group"><label>Пошук</label><input type="text" id="search" placeholder="Місто, автор, рік..."></div>
         <div class="filter-group"><label>Країна</label><select id="fCountry"><option value="all">Усі країни</option></select></div>
-        
-        <div id="regionFilterGroup">
-            <label>Область України</label>
-            <select id="fRegion"><option value="all">Усі області</option></select>
-        </div>
-
+        <div id="regionFilterGroup"><label>Область України</label><select id="fRegion"><option value="all">Усі області</option></select></div>
         <div class="filter-group"><label>Тип</label><select id="fType"><option value="all">Усі типи</option></select></div>
         <div class="filter-group"><label>Вигляд</label><select id="fView"><option value="all">Усі варіанти</option></select></div>
     </div>
@@ -75,7 +65,7 @@
         <h3 style="margin:0; font-size:14px">Статистика вибірки</h3>
         <div id="stats-content">Завантаження...</div>
     </div>
-    <div id="counter">Триває завантаження...</div>
+    <div id="counter">Завантаження...</div>
 </div>
 
 <div id="map"></div>
@@ -88,7 +78,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
@@ -120,22 +110,29 @@
         const views = [...new Set(rawData.map(i => getValue(i, 'view')))].filter(Boolean).sort();
         
         const fc = document.getElementById('fCountry');
-        countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
-        
         const fr = document.getElementById('fRegion');
-        regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
+        const ft = document.getElementById('fType');
+        const fv = document.getElementById('fView');
 
-        document.getElementById('fType').innerHTML += types.map(t => `<option value="${t}">${t}</option>`).join('');
-        document.getElementById('fView').innerHTML += views.map(v => `<option value="${v}">${v}</option>`).join('');
+        countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
+        regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
+        types.forEach(t => ft.innerHTML += `<option value="${t}">${t}</option>`);
+        views.forEach(v => fv.innerHTML += `<option value="${v}">${v}</option>`);
         
-        fc.addEventListener('change', function() {
-            const isUa = this.value === 'Україна' || this.value === 'Ukraine';
+        // Обробник країни для показу областей
+        fc.addEventListener('change', () => {
+            const isUa = fc.value === 'Україна' || fc.value === 'Ukraine';
             document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
-            if (!isUa) document.getElementById('fRegion').value = 'all';
+            if (!isUa) fr.value = 'all';
             renderMap();
         });
 
+        // Слухачі для всіх інших фільтрів
+        [fr, ft, fv].forEach(el => el.addEventListener('change', renderMap));
+        document.getElementById('search').addEventListener('input', renderMap);
+
         renderMap();
+        
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) openPage(id);
     }
@@ -151,10 +148,86 @@
         const filtered = rawData.filter(item => {
             const lat = parseFloat(getValue(item, 'lat').replace(',', '.'));
             if (isNaN(lat)) return false;
+            
             if (fc !== 'all' && getValue(item, 'Country') !== fc) return false;
             if (fc.includes('Україна') && fr !== 'all' && getValue(item, 'Region') !== fr) return false;
             if (ft !== 'all' && getValue(item, 'type') !== ft) return false;
             if (fv !== 'all' && getValue(item, 'view') !== fv) return false;
+            
             const pool = `${getValue(item,'City')} ${getValue(item,'sculptor')} ${getValue(item,'title')}`.toLowerCase();
             return !s || pool.includes(s);
         });
+
+        filtered.forEach(item => {
+            const lat = parseFloat(getValue(item, 'lat').replace(',', '.'));
+            const lon = parseFloat(getValue(item, 'lon').replace(',', '.'));
+            const mainImg = getValue(item, 'Photo-GM') || getValue(item, 'other photo link');
+            
+            const popupHtml = `
+                <div class="popup-card">
+                    <div class="popup-info">
+                        <span class="popup-tag">${getValue(item, 'type') || 'Об\'єкт'}</span>
+                        <h3 class="popup-title">${getValue(item, 'City') || 'Пам\'ятник'}</h3>
+                        <div class="popup-detail"><b>📍</b> ${getValue(item, 'Country')}${getValue(item, 'Region') ? ', ' + getValue(item, 'Region') : ''}</div>
+                        <div class="popup-detail"><b>📅</b> Рік: ${getValue(item, 'year_start') || '-'}</div>
+                        <div class="popup-detail"><b>👤</b> Автор: ${getValue(item, 'sculptor') || '-'}</div>
+                        <div class="popup-desc">${getValue(item, 'short description') || ''}</div>
+                        <button class="more-btn" onclick="openPage('${getValue(item, 'id')}')">ДЕТАЛЬНІШЕ</button>
+                    </div>
+                    <div class="popup-photo-side">
+                        ${mainImg ? `<img src="${mainImg}" class="popup-photo">` : `<div style="color:white;text-align:center;padding:50px 10px;font-size:10px">Фото відсутнє</div>`}
+                    </div>
+                </div>
+            `;
+            markers.addLayer(L.marker([lat, lon]).bindPopup(popupHtml));
+        });
+
+        document.getElementById('counter').innerText = `Знайдено: ${filtered.length}`;
+        updateStats(filtered);
+    }
+
+    function updateStats(filtered) {
+        const typeStats = {};
+        filtered.forEach(i => { const t = getValue(i, 'type') || 'Інше'; typeStats[t] = (typeStats[t] || 0) + 1; });
+        let html = '<ul class="stat-list">';
+        Object.entries(typeStats).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+            html += `<li><span>${k}</span><span class="stat-count">${v}</span></li>`;
+        });
+        document.getElementById('stats-content').innerHTML = html + '</ul>';
+    }
+
+    function openPage(id) {
+        const item = rawData.find(i => getValue(i, 'id') === id);
+        if (!item) return;
+        window.history.pushState({}, '', `?id=${id}`);
+        const img = getValue(item, 'Photo-GM') || getValue(item, 'other photo link');
+        
+        document.getElementById('details').innerHTML = `
+            <div class="grid-main">
+                <div><img src="${img}" class="main-img-full" onerror="this.src='https://via.placeholder.com/600x400?text=No+Photo'"></div>
+                <div>
+                    <h1>${getValue(item, 'City')}</h1>
+                    <table class="passport-table">
+                        <tr><td>Країна</td><td>${getValue(item, 'Country')}</td></tr>
+                        <tr><td>Область</td><td>${getValue(item, 'Region') || '-'}</td></tr>
+                        <tr><td>Тип</td><td>${getValue(item, 'type')}</td></tr>
+                        <tr><td>Автор</td><td>${getValue(item, 'sculptor')}</td></tr>
+                        <tr><td>Рік</td><td>${getValue(item, 'year_start')}</td></tr>
+                        <tr><td>Матеріал</td><td>${getValue(item, 'material')}</td></tr>
+                    </table>
+                    <h3>Опис</h3>
+                    <p>${getValue(item, 'short description')}</p>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${getValue(item,'lat')},${getValue(item,'lon')}" target="_blank" class="route-btn">🗺️ Побудувати маршрут</a>
+                </div>
+            </div>
+        `;
+        document.getElementById('object-page').style.display = 'block';
+    }
+
+    function closePage() {
+        window.history.pushState({}, '', window.location.pathname);
+        document.getElementById('object-page').style.display = 'none';
+    }
+</script>
+</body>
+</html>
