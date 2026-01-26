@@ -28,7 +28,7 @@
         .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
         .stat-tag { 
             background: #eee; padding: 5px 10px; border-radius: 15px; font-size: 11px; 
-            cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; align-items: center;
+            cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; align-items: center; user-select: none;
         }
         .stat-tag:hover { background: #e0e0e0; }
         .stat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -138,16 +138,31 @@
     let activeType = 'all';
     let activeView = 'all';
 
+    // Захищена функція читання даних (виправляє регістр та пусті об'єкти)
     const getVal = (obj, key) => {
+        if (!obj || typeof obj !== 'object') return "";
         const k = Object.keys(obj).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
         return k ? obj[k] : "";
     };
 
     Papa.parse(csvUrl, {
         download: true, header: true, skipEmptyLines: true,
+        error: (err) => {
+            document.getElementById('counter').innerText = "Помилка завантаження!";
+            alert("Не вдалося завантажити дані. Перевірте інтернет.");
+        },
         complete: (results) => {
-            rawData = results.data;
-            init();
+            // Фільтруємо "сміття" - пусті рядки без координат
+            rawData = results.data.filter(item => {
+                const lat = getVal(item, 'lat');
+                return lat && lat.length > 0; 
+            });
+            
+            if (rawData.length === 0) {
+                document.getElementById('counter').innerText = "Дані відсутні або помилка формату.";
+            } else {
+                init();
+            }
         }
     });
 
@@ -173,7 +188,6 @@
 
         renderMap();
         
-        // Перевірка URL
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) openPage(id);
     }
@@ -184,7 +198,6 @@
         const fc = document.getElementById('fCountry').value;
         const fr = document.getElementById('fRegion').value;
 
-        // Фільтрація
         const filtered = rawData.filter(item => {
             const lat = parseFloat(getVal(item, 'lat').replace(',', '.'));
             if (isNaN(lat)) return false;
@@ -198,14 +211,12 @@
             return !s || pool.includes(s);
         });
 
-        // Малювання маркерів
         filtered.forEach(item => {
             const lat = parseFloat(getVal(item, 'lat').replace(',', '.'));
             const lon = parseFloat(getVal(item, 'lon').replace(',', '.'));
             const mainImg = getVal(item, 'Photo-GM') || getVal(item, 'other photo link');
             
-            // Обрізка опису для попапу (130 символів)
-            let desc = getVal(item, 'short description');
+            let desc = getVal(item, 'short description') || '';
             if(desc.length > 130) desc = desc.substring(0, 130) + '...';
 
             const popupHtml = `
@@ -213,4 +224,143 @@
                     <div class="popup-info">
                         <span class="popup-tag">${getVal(item, 'type') || 'Об\'єкт'}</span>
                         <h3 class="popup-title">${getVal(item, 'City') || 'Пам\'ятник'}</h3>
-                        <div class="popup-detail"><b>📍</b> ${getVal(
+                        <div class="popup-detail"><b>📍</b> ${getVal(item, 'Country')}</div>
+                        <div class="popup-detail"><b>📅</b> ${getVal(item, 'year_start') || '-'}</div>
+                        <div class="popup-desc">${desc}</div>
+                        <button class="more-btn" onclick="openPage('${getVal(item, 'id')}')">ДЕТАЛЬНІШЕ</button>
+                    </div>
+                    <div class="popup-photo-side">
+                        ${mainImg ? `<img src="${mainImg}" class="popup-photo">` : `<div style="color:#aaa;text-align:center;padding:80px 10px;font-size:10px">Фото<br>відсутнє</div>`}
+                    </div>
+                </div>
+            `;
+            markers.addLayer(L.marker([lat, lon]).bindPopup(popupHtml));
+        });
+
+        document.getElementById('counter').innerText = `Знайдено об'єктів: ${filtered.length}`;
+        
+        // Оновлюємо теги на основі географічної вибірки
+        updateTags('type', 'typeTags', activeType);
+        updateTags('view', 'viewTags', activeView);
+    }
+
+    function updateTags(key, containerId, activeVal) {
+        const fc = document.getElementById('fCountry').value;
+        const fr = document.getElementById('fRegion').value;
+        const s = document.getElementById('search').value.toLowerCase();
+        
+        // Фільтруємо лише за географією/пошуком, щоб бачити всі доступні типи
+        const geoFiltered = rawData.filter(item => {
+            if (fc !== 'all' && getVal(item, 'Country') !== fc) return false;
+            if (fc.includes('Україна') && fr !== 'all' && getVal(item, 'Region') !== fr) return false;
+            const pool = `${getVal(item,'City')} ${getVal(item,'sculptor')}`.toLowerCase();
+            return !s || pool.includes(s);
+        });
+
+        const counts = {};
+        geoFiltered.forEach(i => {
+            const val = getVal(i, key) || 'Інше';
+            if(val) counts[val] = (counts[val] || 0) + 1;
+        });
+
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        Object.entries(counts).sort((a,b) => b[1] - a[1]).forEach(([val, count]) => {
+            const btn = document.createElement('div');
+            btn.className = `stat-tag ${activeVal === val ? 'active' : ''}`;
+            btn.innerHTML = `${val} <span class="count">${count}</span>`;
+            btn.onclick = () => {
+                // Перемикаємо глобальні змінні
+                if(key === 'type') activeType = (activeType === val ? 'all' : val);
+                if(key === 'view') activeView = (activeView === val ? 'all' : val);
+                renderMap();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('search').value = '';
+        document.getElementById('fCountry').value = 'all';
+        document.getElementById('fRegion').value = 'all';
+        document.getElementById('regionFilterGroup').style.display = 'none';
+        activeType = 'all';
+        activeView = 'all';
+        renderMap();
+        map.setView([48.5, 31.2], 4);
+    }
+
+    function openPage(id) {
+        const item = rawData.find(i => getVal(i, 'id') === id);
+        if (!item) return;
+        window.history.pushState({}, '', `?id=${id}`);
+        
+        const mainImg = getVal(item, 'Photo-GM') || getVal(item, 'other photo link');
+        const lat = getVal(item, 'lat');
+        const lon = getVal(item, 'lon');
+        const url = encodeURIComponent(window.location.href);
+
+        const links = [
+            { name: 'Google Maps', val: getVal(item, 'Google Maps link'), icon: '🗺️' },
+            { name: 'Street View', val: getVal(item, 'Street view link'), icon: '👀' },
+            { name: 'Wikimapia', val: getVal(item, 'wikimapia link'), icon: '🌍' },
+            { name: 'Wikipedia', val: getVal(item, 'Wikipedia link'), icon: '📚' },
+            { name: 'Kobzar.ua', val: getVal(item, 'kobzar.ua link'), icon: '🇺🇦' },
+            { name: 'OSM', val: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', icon: '🧭' }
+        ];
+
+        let linksHtml = links.filter(l => l.val).map(l => 
+            `<a href="${l.val}" target="_blank" class="ext-link-btn">${l.icon} ${l.name}</a>`
+        ).join('');
+
+        document.getElementById('details').innerHTML = `
+            <div class="grid-main">
+                <div>
+                    <img src="${mainImg}" class="main-img-full" onerror="this.src='https://via.placeholder.com/600x400?text=No+Photo'">
+                </div>
+                <div>
+                    <h1 style="margin-top:0">${getVal(item, 'City')}</h1>
+                    <div style="color:#666; margin-bottom:20px; font-size:16px;">
+                        ${getVal(item, 'Country')}, ${getVal(item, 'Region') || ''}
+                    </div>
+                    
+                    <table class="passport-table">
+                        <tr><td>Адреса</td><td>${getVal(item, 'Street') || ''} ${getVal(item, 'adr') || ''}</td></tr>
+                        <tr><td>Тип</td><td>${getVal(item, 'type')}</td></tr>
+                        <tr><td>Вигляд</td><td>${getVal(item, 'view')}</td></tr>
+                        <tr><td>Автор</td><td>${getVal(item, 'sculptor')}</td></tr>
+                        <tr><td>Рік</td><td>${getVal(item, 'year_start')}</td></tr>
+                        <tr><td>Матеріал</td><td>${getVal(item, 'material')}</td></tr>
+                    </table>
+
+                    <h3>Опис</h3>
+                    <p style="line-height:1.6">${getVal(item, 'short description')}</p>
+
+                    <h4 style="margin-bottom:10px">Карти та каталоги</h4>
+                    <div class="links-grid">
+                        ${linksHtml || '<span style="color:#999; font-size:12px">Посилання відсутні</span>'}
+                    </div>
+
+                    <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="route-btn">
+                        🚗 Побудувати маршрут
+                    </a>
+
+                    <div class="share-row">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${url}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
+                        <a href="https://t.me/share/url?url=${url}&text=${getVal(item, 'City')}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
+                        <button onclick="navigator.clipboard.writeText(window.location.href); alert('Посилання скопійовано!')" class="social-btn" style="background:#555">Копіювати</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('object-page').style.display = 'block';
+    }
+
+    function closePage() {
+        window.history.pushState({}, '', window.location.pathname);
+        document.getElementById('object-page').style.display = 'none';
+    }
+</script>
+</body>
+</html>
