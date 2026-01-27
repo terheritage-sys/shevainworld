@@ -152,21 +152,40 @@
         const fc = document.getElementById('fCountry');
         const fr = document.getElementById('fRegion');
         
-        [...new Set(rawData.map(i => getVal(i, 'Country')))].filter(Boolean).sort().forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
-        [...new Set(rawData.map(i => getVal(i, 'Region')))].filter(Boolean).sort().forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
+        // Отримуємо всі унікальні країни
+        const countries = [...new Set(rawData.map(i => getVal(i, 'Country')))].filter(Boolean).sort();
+        
+        // Отримуємо області ТІЛЬКИ для України
+        const regions = [...new Set(
+            rawData
+                .filter(i => {
+                    const country = getVal(i, 'Country');
+                    return country === 'Україна' || country === 'Ukraine';
+                })
+                .map(i => getVal(i, 'Region'))
+        )].filter(Boolean).sort();
+
+        // Заповнюємо селектор країн
+        countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
+        
+        // Заповнюємо селектор областей (вже відфільтрованих)
+        regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
         
         fc.addEventListener('change', () => {
-            document.getElementById('regionFilterGroup').style.display = fc.value.includes('Україна') ? 'block' : 'none';
+            const isUa = fc.value.includes('Україна') || fc.value.toLowerCase() === 'ukraine';
+            document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
+            if (!isUa) fr.value = 'all';
             renderMap();
         });
+
         fr.addEventListener('change', renderMap);
         document.getElementById('search').addEventListener('input', renderMap);
 
         renderMap();
+        
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) openPage(id);
     }
-
     function renderMap() {
         markers.clearLayers();
         const s = document.getElementById('search').value.toLowerCase();
@@ -297,3 +316,4 @@
 </script>
 </body>
 </html>
+
