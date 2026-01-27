@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+Finit<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -152,25 +152,44 @@
         const fc = document.getElementById('fCountry');
         const fr = document.getElementById('fRegion');
         
-        // Отримуємо всі унікальні країни
-        const countries = [...new Set(rawData.map(i => getVal(i, 'Country')))].filter(Boolean).sort();
-        
-        // Отримуємо області ТІЛЬКИ для України
-        const regions = [...new Set(
-            rawData
-                .filter(i => {
-                    const country = getVal(i, 'Country');
-                    return country === 'Україна' || country === 'Ukraine';
-                })
-                .map(i => getVal(i, 'Region'))
-        )].filter(Boolean).sort();
+        // 1. Рахуємо кількість пам'ятників по країнах
+        const countryCounts = {};
+        rawData.forEach(item => {
+            const c = getVal(item, 'Country');
+            if (c) countryCounts[c] = (countryCounts[c] || 0) + 1;
+        });
 
-        // Заповнюємо селектор країн
-        countries.forEach(c => fc.innerHTML += `<option value="${c}">${c}</option>`);
+        // 2. Сортуємо країни: Україна перша, решта за алфавітом
+        const sortedCountries = Object.keys(countryCounts).sort((a, b) => {
+            if (a === 'Україна' || a === 'Ukraine') return -1;
+            if (b === 'Україна' || b === 'Ukraine') return 1;
+            return a.localeCompare(b, 'uk');
+        });
+
+        // 3. Рахуємо області ТІЛЬКИ для України
+        const regionCounts = {};
+        rawData.filter(i => {
+            const c = getVal(i, 'Country');
+            return c === 'Україна' || c === 'Ukraine';
+        }).forEach(item => {
+            const r = getVal(item, 'Region');
+            if (r) regionCounts[r] = (regionCounts[r] || 0) + 1;
+        });
+
+        // 4. Сортуємо області за алфавітом
+        const sortedRegions = Object.keys(regionCounts).sort((a, b) => a.localeCompare(b, 'uk'));
+
+        // 5. Заповнюємо випадаючий список країн
+        sortedCountries.forEach(c => {
+            fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`;
+        });
         
-        // Заповнюємо селектор областей (вже відфільтрованих)
-        regions.forEach(r => fr.innerHTML += `<option value="${r}">${r}</option>`);
+        // 6. Заповнюємо випадаючий список областей
+        sortedRegions.forEach(r => {
+            fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`;
+        });
         
+        // Події фільтрації
         fc.addEventListener('change', () => {
             const isUa = fc.value.includes('Україна') || fc.value.toLowerCase() === 'ukraine';
             document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
@@ -186,6 +205,8 @@
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) openPage(id);
     }
+
+    
     function renderMap() {
         markers.clearLayers();
         const s = document.getElementById('search').value.toLowerCase();
@@ -316,4 +337,5 @@
 </script>
 </body>
 </html>
+
 
