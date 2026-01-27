@@ -276,29 +276,37 @@ Finit<!DOCTYPE html>
         renderMap();
     }
 
-    function openPage(id) {
+   function openPage(id) {
         const item = rawData.find(i => getVal(i, 'id') === id);
         if (!item) return;
         window.history.pushState({}, '', `?id=${id}`);
         
+        const lat = getVal(item, 'lat').replace(',', '.');
+        const lon = getVal(item, 'lon').replace(',', '.');
         const city = getVal(item, 'City');
         const type = getVal(item, 'type') || "Пам'ятник";
         const url = window.location.href;
         const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
 
+        // Отримуємо посилання на Google Maps (GM)
+        const gmLink = getVal(item, 'Google Maps link');
+        
+        // Логіка маршруту: якщо є пряме посилання GM - беремо його, якщо ні - будуємо за координатами
+        const routeUrl = gmLink ? gmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
+        // Формування блоку "Карти та каталоги" за вашим списком
         const extLinks = [
-            { n: 'Google Maps', v: getVal(item, 'Google Maps link'), i: '🗺️' },
+            { n: 'Google Maps', v: gmLink, i: '🗺️' },
             { n: 'Street View', v: getVal(item, 'Street view link'), i: '👀' },
             { n: 'Wikimapia', v: getVal(item, 'wikimapia link'), i: '🌍' },
             { n: 'Wikipedia', v: getVal(item, 'Wikipedia link'), i: '📚' },
-            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua link'), i: '🇺🇦' },
             { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
         ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
 
         document.getElementById('details').innerHTML = `
             <div class="grid-main">
                 <div>
-                    <img src="${getVal(item, 'Photo-GM') || getVal(item, 'other photo link')}" class="main-img-full">
+                    <img src="${getVal(item, 'Photo-GM') || getVal(item, 'other photo link')}" class="main-img-full" onerror="this.src='https://via.placeholder.com/800x600?text=No+Photo'">
                 </div>
                 <div>
                     <h1 style="margin:0 0 10px">${city}</h1>
@@ -310,15 +318,16 @@ Finit<!DOCTYPE html>
                         <tr><td>Вигляд</td><td>${getVal(item, 'view')}</td></tr>
                         <tr><td>Автор</td><td>${getVal(item, 'sculptor')}</td></tr>
                         <tr><td>Рік</td><td>${getVal(item, 'year_start')}</td></tr>
+                        <tr><td>Матеріал</td><td>${getVal(item, 'material') || '-'}</td></tr>
                     </table>
 
                     <div class="section-title">Опис об'єкта</div>
-                    <p style="line-height:1.6; color:#444; font-size:14px;">${getVal(item, 'short description')}</p>
+                    <p style="line-height:1.6; color:#444; font-size:14px; margin-bottom:25px;">${getVal(item, 'short description')}</p>
 
                     <div class="section-title">Карти та каталоги</div>
-                    <div class="links-grid">${extLinks || 'Посилання відсутні'}</div>
+                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Дані відсутні</span>'}</div>
 
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${getVal(item, 'lat')},${getVal(item, 'lon')}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
+                    <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
 
                     <div class="share-row">
                         <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
@@ -337,5 +346,6 @@ Finit<!DOCTYPE html>
 </script>
 </body>
 </html>
+
 
 
