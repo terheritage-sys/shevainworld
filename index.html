@@ -288,18 +288,18 @@ Finit<!DOCTYPE html>
         const url = window.location.href;
         const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
 
-        // Отримуємо посилання на Google Maps (GM)
+        // Логіка кнопки "Побудувати маршрут"
         const gmLink = getVal(item, 'Google Maps link');
-        
-        // Логіка маршруту: якщо є пряме посилання GM - беремо його, якщо ні - будуємо за координатами
-        const routeUrl = gmLink ? gmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+        // Якщо є посилання в колонці GM -> беремо його. Якщо ні -> формуємо посилання на навігацію за координатами
+        const routeUrl = gmLink ? gmLink : `https://www.google.com/maps/dir//${lat},${lon}/@${lat},${lon},15z`;
 
-        // Формування блоку "Карти та каталоги" за вашим списком
+        // Блок "Карти та каталоги" (всі джерела, включаючи Kobzar.ua)
         const extLinks = [
             { n: 'Google Maps', v: gmLink, i: '🗺️' },
             { n: 'Street View', v: getVal(item, 'Street view link'), i: '👀' },
             { n: 'Wikimapia', v: getVal(item, 'wikimapia link'), i: '🌍' },
             { n: 'Wikipedia', v: getVal(item, 'Wikipedia link'), i: '📚' },
+            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua link'), i: '🇺🇦' },
             { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
         ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
 
@@ -346,6 +346,7 @@ Finit<!DOCTYPE html>
 </script>
 </body>
 </html>
+
 
 
 
