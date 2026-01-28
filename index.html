@@ -276,7 +276,7 @@ Finit<!DOCTYPE html>
         renderMap();
     }
 
-   function openPage(id) {
+ function openPage(id) {
         const item = rawData.find(i => getVal(i, 'id') === id);
         if (!item) return;
         window.history.pushState({}, '', `?id=${id}`);
@@ -288,18 +288,21 @@ Finit<!DOCTYPE html>
         const url = window.location.href;
         const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
 
-        // Логіка кнопки "Побудувати маршрут"
-        const gmLink = getVal(item, 'Google Maps link');
-        // Якщо є посилання в колонці GM -> беремо його. Якщо ні -> формуємо посилання на навігацію за координатами
-        const routeUrl = gmLink ? gmLink : `https://www.google.com/maps/dir//${lat},${lon}/@${lat},${lon},15z`;
+        // --- ЛОГІКА МАРШРУТУ ---
+        // 1. Беремо пряме посилання з колонки GM
+        const directGmLink = getVal(item, 'GM');
+        
+        // 2. Якщо воно є - використовуємо його. Якщо ні - будуємо навігацію за координатами
+        const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 
-        // Блок "Карти та каталоги" (всі джерела, включаючи Kobzar.ua)
+        // --- БЛОК КАРТИ ТА КАТАЛОГИ ---
+        // Використовуємо точні назви колонок з вашого списку
         const extLinks = [
-            { n: 'Google Maps', v: gmLink, i: '🗺️' },
-            { n: 'Street View', v: getVal(item, 'Street view link'), i: '👀' },
-            { n: 'Wikimapia', v: getVal(item, 'wikimapia link'), i: '🌍' },
-            { n: 'Wikipedia', v: getVal(item, 'Wikipedia link'), i: '📚' },
-            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua link'), i: '🇺🇦' },
+            { n: 'Google Maps', v: directGmLink, i: '🗺️' },
+            { n: 'Street View', v: getVal(item, 'StreetView'), i: '👀' },
+            { n: 'Wikimapia', v: getVal(item, 'wikimapia'), i: '🌍' },
+            { n: 'Wikipedia', v: getVal(item, 'Wikipedia'), i: '📚' },
+            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua'), i: '🇺🇦' },
             { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
         ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
 
@@ -310,7 +313,9 @@ Finit<!DOCTYPE html>
                 </div>
                 <div>
                     <h1 style="margin:0 0 10px">${city}</h1>
-                    <p style="color:var(--blue); font-weight:bold; margin-bottom:20px;">${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}</p>
+                    <p style="color:var(--blue); font-weight:bold; margin-bottom:20px;">
+                        ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}
+                    </p>
                     
                     <table class="passport-table">
                         <tr><td>Адреса</td><td>${getVal(item, 'Street')} ${getVal(item, 'adr')}</td></tr>
@@ -325,7 +330,7 @@ Finit<!DOCTYPE html>
                     <p style="line-height:1.6; color:#444; font-size:14px; margin-bottom:25px;">${getVal(item, 'short description')}</p>
 
                     <div class="section-title">Карти та каталоги</div>
-                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Дані відсутні</span>'}</div>
+                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Посилання відсутні</span>'}</div>
 
                     <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
 
@@ -346,6 +351,7 @@ Finit<!DOCTYPE html>
 </script>
 </body>
 </html>
+
 
 
 
