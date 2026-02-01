@@ -25,7 +25,6 @@
         
         .reset-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-weight: bold; }
         
-        /* Кнопка закриття меню для мобільних (прихована на десктопі) */
         .close-sidebar-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 10px; }
 
         .filters { padding: 15px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
@@ -46,7 +45,7 @@
         #map { width: 100%; height: 100%; }
 
         .mobile-menu-btn { 
-            display: none; /* Приховано на десктопі */
+            display: none; 
             position: absolute; top: 20px; left: 20px; z-index: 1000;
             background: var(--blue); color: white; border: none; 
             padding: 12px 15px; border-radius: 50px; font-weight: bold; 
@@ -88,30 +87,26 @@
 
         #counter { padding: 12px; background: #f0f0f0; text-align: center; font-size: 12px; font-weight: bold; border-top: 1px solid #ddd; }
 
-        /* --- MOBILE MEDIA QUERIES --- */
+        /* MOBILE */
         @media (max-width: 768px) {
             #sidebar {
                 position: fixed; top: 0; left: 0; height: 100%; width: 85%; max-width: 320px;
-                transform: translateX(-100%); /* Приховано за замовчуванням */
+                transform: translateX(-100%);
             }
             #sidebar.open { transform: translateX(0); }
-            
-            /* Затемнення фону при відкритому меню */
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; }
             .overlay.active { display: block; }
 
             .mobile-menu-btn { display: flex; }
             .close-sidebar-btn { display: block; }
             
-            /* Адаптація попапу */
             .leaflet-popup-content { width: 300px !important; }
             .popup-card { height: auto; min-height: 180px; }
             .popup-photo-side { width: 100px; }
             .popup-info { padding: 12px; }
             .popup-title { font-size: 14px; }
-            .popup-desc { display: none; } /* На дуже малих екранах приховуємо опис у попапі, щоб влізло */
+            .popup-desc { display: none; }
             
-            /* Адаптація сторінки об'єкта */
             .grid-main { grid-template-columns: 1fr; gap: 20px; }
             .page-content { padding: 20px 15px; }
             .passport-table td { font-size: 13px; padding: 8px; }
@@ -177,10 +172,7 @@
 
 <script>
     const map = L.map('map', { zoomControl: false }).setView([48.5, 31.2], 5);
-    
-    // Адаптивне розташування зуму (знизу справа, щоб не заважати меню)
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
     const markers = L.markerClusterGroup({ showCoverageOnHover: false });
@@ -208,7 +200,7 @@
         const fc = document.getElementById('fCountry');
         const fr = document.getElementById('fRegion');
         
-        // --- 1. Країни (Сортування + Лічильник) ---
+        // 1. Країни (Сортування + Лічильник)
         const countryCounts = {};
         rawData.forEach(item => {
             const c = getVal(item, 'Country');
@@ -221,7 +213,7 @@
             return a.localeCompare(b, 'uk');
         });
 
-        // --- 2. Області України ---
+        // 2. Області України
         const regionCounts = {};
         rawData.filter(i => {
             const c = getVal(i, 'Country');
@@ -232,7 +224,6 @@
         });
         const sortedRegions = Object.keys(regionCounts).sort((a, b) => a.localeCompare(b, 'uk'));
 
-        // Заповнення списків
         sortedCountries.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
         sortedRegions.forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
         
@@ -247,7 +238,6 @@
         document.getElementById('search').addEventListener('input', renderMap);
 
         renderMap();
-        
         const id = new URLSearchParams(window.location.search).get('id');
         if (id) openPage(id);
     }
@@ -262,7 +252,13 @@
             if (fc !== 'all' && getVal(item, 'Country') !== fc) return false;
             if (fc.includes('Україна') && fr !== 'all' && getVal(item, 'Region') !== fr) return false;
             if (activeType !== 'all' && getVal(item, 'type') !== activeType) return false;
-            if (activeView !== 'all' && getVal(item, 'view') !== activeView) return false;
+            
+            // НОВА ЛОГІКА ДЛЯ view: перевіряємо наявність тегу в списку (розділеному комами)
+            if (activeView !== 'all') {
+                const itemViews = getVal(item, 'view').split(',').map(s => s.trim());
+                if (!itemViews.includes(activeView)) return false;
+            }
+
             const pool = `${getVal(item,'City')} ${getVal(item,'sculptor')}`.toLowerCase();
             return !s || pool.includes(s);
         });
@@ -298,7 +294,23 @@
 
     function updateTags(key, containerId, activeVal) {
         const counts = {};
-        rawData.forEach(i => { const v = getVal(i, key); if(v) counts[v] = (counts[v] || 0) + 1; });
+        
+        rawData.forEach(i => {
+            const raw = getVal(i, key);
+            if (!raw) return;
+
+            if (key === 'view') {
+                // НОВА ЛОГІКА: Розбиваємо рядок по комах для таксономії
+                raw.split(',').forEach(part => {
+                    const tag = part.trim();
+                    if(tag) counts[tag] = (counts[tag] || 0) + 1;
+                });
+            } else {
+                // Стандартна логіка для типів
+                counts[raw] = (counts[raw] || 0) + 1;
+            }
+        });
+
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val, count]) => {
@@ -309,7 +321,6 @@
                 if(key === 'type') activeType = (activeType === val ? 'all' : val);
                 else activeView = (activeView === val ? 'all' : val);
                 renderMap();
-                // На мобільному закриваємо меню після вибору тегу, щоб бачити результат
                 if(window.innerWidth <= 768) toggleSidebar();
             };
             container.appendChild(btn);
@@ -325,7 +336,6 @@
         if(window.innerWidth <= 768) toggleSidebar();
     }
 
-    // --- Функція перемикання меню для мобільних ---
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('open');
         document.getElementById('overlay').classList.toggle('active');
@@ -343,11 +353,9 @@
         const url = window.location.href;
         const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
 
-        // Логіка кнопки "Побудувати маршрут" (Виправлена)
         const directGmLink = getVal(item, 'GM');
         const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 
-        // Блок "Карти та каталоги" (Виправлено)
         const extLinks = [
             { n: 'Google Maps', v: directGmLink, i: '🗺️' },
             { n: 'Street View', v: getVal(item, 'StreetView'), i: '👀' },
