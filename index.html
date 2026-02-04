@@ -30,8 +30,31 @@
         .filters { padding: 15px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
         .filter-group { margin-bottom: 20px; }
         label { display: block; font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
+        select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
         
+        /* Стилі для списку чекбоксів (Роки) */
+        .checkbox-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            padding: 5px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .checkbox-item:last-child { border-bottom: none; }
+        .checkbox-item:hover { background: #f9f9f9; }
+        .checkbox-item input { margin-right: 10px; cursor: pointer; }
+        .checkbox-item span { flex: 1; }
+        .checkbox-item .count-badge { font-size: 10px; color: #999; background: #eee; padding: 2px 6px; border-radius: 10px; }
+
         #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-bottom: 20px; }
 
         .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -40,23 +63,21 @@
         .stat-tag .count { margin-left: 6px; opacity: 0.7; font-size: 10px; font-weight: bold; }
         .stat-tag.active .count { opacity: 1; color: var(--gold); }
 
-        /* MAP CONTAINER & MOBILE TOGGLE */
+        /* MAP & UI */
         #map-container { flex: 1; position: relative; height: 100%; }
         #map { width: 100%; height: 100%; }
 
         .mobile-menu-btn { 
-            display: none; 
-            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            display: none; position: absolute; top: 20px; left: 20px; z-index: 1000;
             background: var(--blue); color: white; border: none; 
             padding: 12px 15px; border-radius: 50px; font-weight: bold; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;
             align-items: center; gap: 8px; font-size: 14px;
         }
 
-        /* POPUP STYLES */
+        /* POPUP */
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
         .leaflet-popup-content { margin: 0 !important; width: 380px !important; }
-        
         .popup-card { display: flex; height: 220px; }
         .popup-info { flex: 1; padding: 15px; overflow: hidden; display: flex; flex-direction: column; }
         .popup-photo-side { width: 130px; background: #222; flex-shrink: 0; }
@@ -71,46 +92,33 @@
         #object-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3000; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .page-content { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
         .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; }
-        
         .main-img-full { width: 100%; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
         .passport-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
         .passport-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .passport-table td:first-child { font-weight: bold; color: #888; width: 35%; text-transform: uppercase; font-size: 10px; }
-
         .section-title { font-size: 11px; color: #999; text-transform: uppercase; font-weight: bold; margin: 25px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .links-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         .ext-link-btn { text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; background: #f8f9fa; color: #333; font-weight: 600; border: 1px solid #ddd; display: flex; align-items: center; gap:5px; }
-        
         .route-btn { display: block; background: #28a745; color: white; text-align: center; padding: 18px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 20px 0; }
         .share-row { display: flex; gap: 10px; margin-top: 15px; }
         .social-btn { flex: 1; border: none; padding: 12px; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; font-size: 12px; text-decoration: none; text-align: center; }
-
         #counter { padding: 12px; background: #f0f0f0; text-align: center; font-size: 12px; font-weight: bold; border-top: 1px solid #ddd; }
 
-        /* MOBILE */
         @media (max-width: 768px) {
-            #sidebar {
-                position: fixed; top: 0; left: 0; height: 100%; width: 85%; max-width: 320px;
-                transform: translateX(-100%);
-            }
+            #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 85%; max-width: 320px; transform: translateX(-100%); }
             #sidebar.open { transform: translateX(0); }
             .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; }
             .overlay.active { display: block; }
-
             .mobile-menu-btn { display: flex; }
             .close-sidebar-btn { display: block; }
-            
             .leaflet-popup-content { width: 300px !important; }
             .popup-card { height: auto; min-height: 180px; }
             .popup-photo-side { width: 100px; }
             .popup-info { padding: 12px; }
             .popup-title { font-size: 14px; }
             .popup-desc { display: none; }
-            
             .grid-main { grid-template-columns: 1fr; gap: 20px; }
             .page-content { padding: 20px 15px; }
-            .passport-table td { font-size: 13px; padding: 8px; }
-            .route-btn { font-size: 16px; padding: 15px; }
         }
     </style>
 </head>
@@ -130,7 +138,7 @@
     <div class="filters">
         <div class="filter-group">
             <label>Пошук</label>
-            <input type="text" id="search" placeholder="Місто, автор, рік...">
+            <input type="text" id="search" placeholder="Місто, автор, ключове слово...">
         </div>
         
         <div class="filter-group">
@@ -141,6 +149,11 @@
         <div class="filter-group">
             <label>Вигляд (Таксономія)</label>
             <div id="viewTags" class="tag-container"></div>
+        </div>
+
+        <div class="filter-group">
+            <label>Рік встановлення (мультивибір)</label>
+            <div id="yearCheckboxes" class="checkbox-list"></div>
         </div>
 
         <div class="filter-group">
@@ -181,11 +194,19 @@
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
     let rawData = [];
     let activeType = 'all', activeView = 'all';
+    let selectedYears = new Set(); // Зберігаємо вибрані роки
 
     const getVal = (obj, key) => {
         if (!obj) return "";
         const k = Object.keys(obj).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
         return k ? obj[k].trim() : "";
+    };
+
+    // Допоміжна функція: витягує перші 4 цифри з рядка
+    const extractYear = (str) => {
+        if (!str) return null;
+        const match = str.match(/\d{4}/);
+        return match ? match[0] : null;
     };
 
     Papa.parse(csvUrl, {
@@ -197,216 +218,16 @@
     });
 
     function init() {
+        // --- Налаштування фільтрів країн та регіонів ---
         const fc = document.getElementById('fCountry');
         const fr = document.getElementById('fRegion');
         
-        // 1. Країни (Сортування + Лічильник)
         const countryCounts = {};
         rawData.forEach(item => {
             const c = getVal(item, 'Country');
             if (c) countryCounts[c] = (countryCounts[c] || 0) + 1;
         });
-
         const sortedCountries = Object.keys(countryCounts).sort((a, b) => {
             if (a === 'Україна' || a === 'Ukraine') return -1;
             if (b === 'Україна' || b === 'Ukraine') return 1;
             return a.localeCompare(b, 'uk');
-        });
-
-        // 2. Області України
-        const regionCounts = {};
-        rawData.filter(i => {
-            const c = getVal(i, 'Country');
-            return c === 'Україна' || c === 'Ukraine';
-        }).forEach(item => {
-            const r = getVal(item, 'Region');
-            if (r) regionCounts[r] = (regionCounts[r] || 0) + 1;
-        });
-        const sortedRegions = Object.keys(regionCounts).sort((a, b) => a.localeCompare(b, 'uk'));
-
-        sortedCountries.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
-        sortedRegions.forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
-        
-        fc.addEventListener('change', () => {
-            const isUa = fc.value.includes('Україна') || fc.value.toLowerCase() === 'ukraine';
-            document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
-            if (!isUa) fr.value = 'all';
-            renderMap();
-        });
-
-        fr.addEventListener('change', renderMap);
-        document.getElementById('search').addEventListener('input', renderMap);
-
-        renderMap();
-        const id = new URLSearchParams(window.location.search).get('id');
-        if (id) openPage(id);
-    }
-
-    function renderMap() {
-        markers.clearLayers();
-        const s = document.getElementById('search').value.toLowerCase();
-        const fc = document.getElementById('fCountry').value;
-        const fr = document.getElementById('fRegion').value;
-
-        const filtered = rawData.filter(item => {
-            if (fc !== 'all' && getVal(item, 'Country') !== fc) return false;
-            if (fc.includes('Україна') && fr !== 'all' && getVal(item, 'Region') !== fr) return false;
-            if (activeType !== 'all' && getVal(item, 'type') !== activeType) return false;
-            
-            // НОВА ЛОГІКА ДЛЯ view: перевіряємо наявність тегу в списку (розділеному комами)
-            if (activeView !== 'all') {
-                const itemViews = getVal(item, 'view').split(',').map(s => s.trim());
-                if (!itemViews.includes(activeView)) return false;
-            }
-
-            const pool = `${getVal(item,'City')} ${getVal(item,'sculptor')}`.toLowerCase();
-            return !s || pool.includes(s);
-        });
-
-        filtered.forEach(item => {
-            const lat = parseFloat(getVal(item, 'lat').replace(',', '.'));
-            const lon = parseFloat(getVal(item, 'lon').replace(',', '.'));
-            const img = getVal(item, 'Photo-GM') || getVal(item, 'other photo link');
-            let desc = getVal(item, 'short description') || "";
-            if(desc.length > 130) desc = desc.substring(0, 130) + '...';
-
-            const popupHtml = `
-                <div class="popup-card">
-                    <div class="popup-info">
-                        <span class="popup-tag">${getVal(item, 'type') || 'Об\'єкт'}</span>
-                        <h3 class="popup-title">${getVal(item, 'City')}</h3>
-                        <div class="popup-detail">📍 ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}</div>
-                        <div class="popup-detail">📅 Рік: ${getVal(item, 'year_start') || '-'}</div>
-                        <div class="popup-desc">${desc}</div>
-                        <button class="more-btn" onclick="openPage('${getVal(item, 'id')}')">ДЕТАЛЬНІШЕ</button>
-                    </div>
-                    <div class="popup-photo-side">
-                        ${img ? `<img src="${img}" class="popup-photo">` : ''}
-                    </div>
-                </div>`;
-            markers.addLayer(L.marker([lat, lon]).bindPopup(popupHtml));
-        });
-
-        document.getElementById('counter').innerText = `Об'єктів: ${filtered.length}`;
-        updateTags('type', 'typeTags', activeType);
-        updateTags('view', 'viewTags', activeView);
-    }
-
-    function updateTags(key, containerId, activeVal) {
-        const counts = {};
-        
-        rawData.forEach(i => {
-            const raw = getVal(i, key);
-            if (!raw) return;
-
-            if (key === 'view') {
-                // НОВА ЛОГІКА: Розбиваємо рядок по комах для таксономії
-                raw.split(',').forEach(part => {
-                    const tag = part.trim();
-                    if(tag) counts[tag] = (counts[tag] || 0) + 1;
-                });
-            } else {
-                // Стандартна логіка для типів
-                counts[raw] = (counts[raw] || 0) + 1;
-            }
-        });
-
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val, count]) => {
-            const btn = document.createElement('div');
-            btn.className = `stat-tag ${activeVal === val ? 'active' : ''}`;
-            btn.innerHTML = `${val} <span class="count">${count}</span>`;
-            btn.onclick = () => {
-                if(key === 'type') activeType = (activeType === val ? 'all' : val);
-                else activeView = (activeView === val ? 'all' : val);
-                renderMap();
-                if(window.innerWidth <= 768) toggleSidebar();
-            };
-            container.appendChild(btn);
-        });
-    }
-
-    function resetFilters() {
-        document.getElementById('search').value = '';
-        document.getElementById('fCountry').value = 'all';
-        document.getElementById('fRegion').value = 'all';
-        activeType = 'all'; activeView = 'all';
-        renderMap();
-        if(window.innerWidth <= 768) toggleSidebar();
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').classList.toggle('active');
-    }
-
-    function openPage(id) {
-        const item = rawData.find(i => getVal(i, 'id') === id);
-        if (!item) return;
-        window.history.pushState({}, '', `?id=${id}`);
-        
-        const lat = getVal(item, 'lat').replace(',', '.');
-        const lon = getVal(item, 'lon').replace(',', '.');
-        const city = getVal(item, 'City');
-        const type = getVal(item, 'type') || "Пам'ятник";
-        const url = window.location.href;
-        const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
-
-        const directGmLink = getVal(item, 'GM');
-        const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-
-        const extLinks = [
-            { n: 'Google Maps', v: directGmLink, i: '🗺️' },
-            { n: 'Street View', v: getVal(item, 'StreetView'), i: '👀' },
-            { n: 'Wikimapia', v: getVal(item, 'wikimapia'), i: '🌍' },
-            { n: 'Wikipedia', v: getVal(item, 'Wikipedia'), i: '📚' },
-            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua'), i: '🇺🇦' },
-            { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
-        ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
-
-        document.getElementById('details').innerHTML = `
-            <div class="grid-main">
-                <div>
-                    <img src="${getVal(item, 'Photo-GM') || getVal(item, 'other photo link')}" class="main-img-full" onerror="this.src='https://via.placeholder.com/800x600?text=No+Photo'">
-                </div>
-                <div>
-                    <h1 style="margin:0 0 10px">${city}</h1>
-                    <p style="color:var(--blue); font-weight:bold; margin-bottom:20px;">
-                        ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}
-                    </p>
-                    
-                    <table class="passport-table">
-                        <tr><td>Адреса</td><td>${getVal(item, 'Street')} ${getVal(item, 'adr')}</td></tr>
-                        <tr><td>Тип</td><td>${type}</td></tr>
-                        <tr><td>Вигляд</td><td>${getVal(item, 'view')}</td></tr>
-                        <tr><td>Автор</td><td>${getVal(item, 'sculptor')}</td></tr>
-                        <tr><td>Рік</td><td>${getVal(item, 'year_start')}</td></tr>
-                        <tr><td>Матеріал</td><td>${getVal(item, 'material') || '-'}</td></tr>
-                    </table>
-
-                    <div class="section-title">Опис об'єкта</div>
-                    <p style="line-height:1.6; color:#444; font-size:14px; margin-bottom:25px;">${getVal(item, 'short description')}</p>
-
-                    <div class="section-title">Карти та каталоги</div>
-                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Посилання відсутні</span>'}</div>
-
-                    <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
-
-                    <div class="share-row">
-                        <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
-                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
-                        <button onclick="navigator.clipboard.writeText('${url}'); alert('Скопійовано!')" class="social-btn" style="background:#555">🔗 Копіювати</button>
-                    </div>
-                </div>
-            </div>`;
-        document.getElementById('object-page').style.display = 'block';
-    }
-
-    function closePage() {
-        window.history.pushState({}, '', window.location.pathname);
-        document.getElementById('object-page').style.display = 'none';
-    }
-</script>
-</body>
-</html>
