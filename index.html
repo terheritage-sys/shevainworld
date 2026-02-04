@@ -231,3 +231,244 @@
             if (a === 'Україна' || a === 'Ukraine') return -1;
             if (b === 'Україна' || b === 'Ukraine') return 1;
             return a.localeCompare(b, 'uk');
+        });
+        const regionCounts = {};
+        rawData.filter(i => {
+            const c = getVal(i, 'Country');
+            return c === 'Україна' || c === 'Ukraine';
+        }).forEach(item => {
+            const r = getVal(item, 'Region');
+            if (r) regionCounts[r] = (regionCounts[r] || 0) + 1;
+        });
+        const sortedRegions = Object.keys(regionCounts).sort((a, b) => a.localeCompare(b, 'uk'));
+        
+        sortedCountries.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
+        sortedRegions.forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
+        
+        fc.addEventListener('change', () => {
+            const isUa = fc.value.includes('Україна') || fc.value.toLowerCase() === 'ukraine';
+            document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
+            if (!isUa) fr.value = 'all';
+            renderMap();
+        });
+        fr.addEventListener('change', renderMap);
+        document.getElementById('search').addEventListener('input', renderMap);
+
+        // --- Ініціалізація списку років ---
+        initYearFilter();
+
+        renderMap();
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (id) openPage(id);
+    }
+
+    function initYearFilter() {
+        const yearCounts = {};
+        rawData.forEach(item => {
+            const y = extractYear(getVal(item, 'year_start'));
+            if (y) yearCounts[y] = (yearCounts[y] || 0) + 1;
+        });
+
+        // Сортуємо роки за зростанням (старіші зверху)
+        const sortedYears = Object.keys(yearCounts).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        const container = document.getElementById('yearCheckboxes');
+        container.innerHTML = '';
+
+        sortedYears.forEach(year => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" value="${year}" id="cb-year-${year}">
+                <span>${year}</span>
+                <span class="count-badge">${yearCounts[year]}</span>
+            `;
+            // Додаємо слухач подій
+            const cb = div.querySelector('input');
+            div.addEventListener('click', (e) => {
+                if (e.target !== cb) cb.checked = !cb.checked;
+                if (cb.checked) selectedYears.add(year);
+                else selectedYears.delete(year);
+                renderMap();
+            });
+            container.appendChild(div);
+        });
+    }
+
+    function renderMap() {
+        markers.clearLayers();
+        const s = document.getElementById('search').value.toLowerCase();
+        const fc = document.getElementById('fCountry').value;
+        const fr = document.getElementById('fRegion').value;
+
+        const filtered = rawData.filter(item => {
+            // Фільтр Географії
+            if (fc !== 'all' && getVal(item, 'Country') !== fc) return false;
+            if (fc.includes('Україна') && fr !== 'all' && getVal(item, 'Region') !== fr) return false;
+            
+            // Фільтр Типу
+            if (activeType !== 'all' && getVal(item, 'type') !== activeType) return false;
+            
+            // Фільтр Таксономії (мультитеги)
+            if (activeView !== 'all') {
+                const itemViews = getVal(item, 'view').split(',').map(s => s.trim());
+                if (!itemViews.includes(activeView)) return false;
+            }
+
+            // Фільтр Років (Мультивибір)
+            // Якщо вибрано хоча б один рік у фільтрі -> перевіряємо
+            if (selectedYears.size > 0) {
+                const itemYear = extractYear(getVal(item, 'year_start'));
+                if (!itemYear || !selectedYears.has(itemYear)) return false;
+            }
+
+            // Фільтр Пошуку
+            const pool = `${getVal(item,'City')} ${getVal(item,'sculptor')} ${getVal(item,'short description')}`.toLowerCase();
+            return !s || pool.includes(s);
+        });
+
+        filtered.forEach(item => {
+            const lat = parseFloat(getVal(item, 'lat').replace(',', '.'));
+            const lon = parseFloat(getVal(item, 'lon').replace(',', '.'));
+            const img = getVal(item, 'Photo-GM') || getVal(item, 'other photo link');
+            let desc = getVal(item, 'short description') || "";
+            if(desc.length > 130) desc = desc.substring(0, 130) + '...';
+
+            const popupHtml = `
+                <div class="popup-card">
+                    <div class="popup-info">
+                        <span class="popup-tag">${getVal(item, 'type') || 'Об\'єкт'}</span>
+                        <h3 class="popup-title">${getVal(item, 'City')}</h3>
+                        <div class="popup-detail">📍 ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}</div>
+                        <div class="popup-detail">📅 Рік: ${getVal(item, 'year_start') || '-'}</div>
+                        <div class="popup-desc">${desc}</div>
+                        <button class="more-btn" onclick="openPage('${getVal(item, 'id')}')">ДЕТАЛЬНІШЕ</button>
+                    </div>
+                    <div class="popup-photo-side">
+                        ${img ? `<img src="${img}" class="popup-photo">` : ''}
+                    </div>
+                </div>`;
+            markers.addLayer(L.marker([lat, lon]).bindPopup(popupHtml));
+        });
+
+        document.getElementById('counter').innerText = `Об'єктів: ${filtered.length}`;
+        updateTags('type', 'typeTags', activeType);
+        updateTags('view', 'viewTags', activeView);
+    }
+
+    function updateTags(key, containerId, activeVal) {
+        const counts = {};
+        rawData.forEach(i => {
+            const raw = getVal(i, key);
+            if (!raw) return;
+            if (key === 'view') {
+                raw.split(',').forEach(part => { const tag = part.trim(); if(tag) counts[tag] = (counts[tag] || 0) + 1; });
+            } else {
+                counts[raw] = (counts[raw] || 0) + 1;
+            }
+        });
+
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val, count]) => {
+            const btn = document.createElement('div');
+            btn.className = `stat-tag ${activeVal === val ? 'active' : ''}`;
+            btn.innerHTML = `${val} <span class="count">${count}</span>`;
+            btn.onclick = () => {
+                if(key === 'type') activeType = (activeType === val ? 'all' : val);
+                else activeView = (activeView === val ? 'all' : val);
+                renderMap();
+                if(window.innerWidth <= 768) toggleSidebar();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('search').value = '';
+        document.getElementById('fCountry').value = 'all';
+        document.getElementById('fRegion').value = 'all';
+        activeType = 'all'; activeView = 'all';
+        
+        // Скидання років
+        selectedYears.clear();
+        document.querySelectorAll('#yearCheckboxes input').forEach(cb => cb.checked = false);
+
+        renderMap();
+        if(window.innerWidth <= 768) toggleSidebar();
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function openPage(id) {
+        const item = rawData.find(i => getVal(i, 'id') === id);
+        if (!item) return;
+        window.history.pushState({}, '', `?id=${id}`);
+        
+        const lat = getVal(item, 'lat').replace(',', '.');
+        const lon = getVal(item, 'lon').replace(',', '.');
+        const city = getVal(item, 'City');
+        const type = getVal(item, 'type') || "Пам'ятник";
+        const url = window.location.href;
+        const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
+
+        const directGmLink = getVal(item, 'GM');
+        const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
+        const extLinks = [
+            { n: 'Google Maps', v: directGmLink, i: '🗺️' },
+            { n: 'Street View', v: getVal(item, 'StreetView'), i: '👀' },
+            { n: 'Wikimapia', v: getVal(item, 'wikimapia'), i: '🌍' },
+            { n: 'Wikipedia', v: getVal(item, 'Wikipedia'), i: '📚' },
+            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua'), i: '🇺🇦' },
+            { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
+        ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
+
+        document.getElementById('details').innerHTML = `
+            <div class="grid-main">
+                <div>
+                    <img src="${getVal(item, 'Photo-GM') || getVal(item, 'other photo link')}" class="main-img-full" onerror="this.src='https://via.placeholder.com/800x600?text=No+Photo'">
+                </div>
+                <div>
+                    <h1 style="margin:0 0 10px">${city}</h1>
+                    <p style="color:var(--blue); font-weight:bold; margin-bottom:20px;">
+                        ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}
+                    </p>
+                    
+                    <table class="passport-table">
+                        <tr><td>Адреса</td><td>${getVal(item, 'Street')} ${getVal(item, 'adr')}</td></tr>
+                        <tr><td>Тип</td><td>${type}</td></tr>
+                        <tr><td>Вигляд</td><td>${getVal(item, 'view')}</td></tr>
+                        <tr><td>Автор</td><td>${getVal(item, 'sculptor')}</td></tr>
+                        <tr><td>Рік</td><td>${getVal(item, 'year_start')}</td></tr>
+                        <tr><td>Матеріал</td><td>${getVal(item, 'material') || '-'}</td></tr>
+                    </table>
+
+                    <div class="section-title">Опис об'єкта</div>
+                    <p style="line-height:1.6; color:#444; font-size:14px; margin-bottom:25px;">${getVal(item, 'short description')}</p>
+
+                    <div class="section-title">Карти та каталоги</div>
+                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Посилання відсутні</span>'}</div>
+
+                    <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
+
+                    <div class="share-row">
+                        <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
+                        <button onclick="navigator.clipboard.writeText('${url}'); alert('Скопійовано!')" class="social-btn" style="background:#555">🔗 Копіювати</button>
+                    </div>
+                </div>
+            </div>`;
+        document.getElementById('object-page').style.display = 'block';
+    }
+
+    function closePage() {
+        window.history.pushState({}, '', window.location.pathname);
+        document.getElementById('object-page').style.display = 'none';
+    }
+</script>
+</body>
+</html>
