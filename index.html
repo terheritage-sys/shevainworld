@@ -13,330 +13,257 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"/>
-
 <style>
-:root {
-  --blue: #0057b7; --gold: #ffd700; --gold-dark: #c8900a;
-  --bg: #f2f4f8; --text: #2a2d35; --muted: #7a8090;
-  --sidebar-w: 360px;
-  --radius: 10px;
-  --shadow: 0 4px 20px rgba(0,0,0,0.12);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Nunito', sans-serif; display: flex; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); }
-
-/* ========== SIDEBAR ========== */
-#sidebar {
-  width: var(--sidebar-w); background: #fff; border-right: 1px solid #e8eaf0;
-  display: flex; flex-direction: column; z-index: 2000;
-  box-shadow: 2px 0 20px rgba(0,0,0,0.08); transition: transform 0.3s ease;
-}
-.sidebar-header {
-  padding: 16px 20px 0; background: var(--blue); color: white; flex-shrink: 0;
-}
-.sidebar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.sidebar-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; letter-spacing: 0.3px; }
-.sidebar-title span { color: var(--gold); }
-.btn-reset { background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 5px 11px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 700; font-family: 'Nunito', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
-.btn-reset:hover { background: rgba(255,255,255,0.3); }
-.close-btn { display: none; background: none; border: none; color: white; font-size: 26px; cursor: pointer; line-height: 1; padding: 0 5px; }
-
-/* Tabs */
-.tabs { display: flex; border-bottom: none; margin: 0 -20px; }
-.tab-btn {
-  flex: 1; padding: 10px 5px; background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.75);
-  border: none; cursor: pointer; font-size: 12px; font-weight: 700; font-family: 'Nunito', sans-serif;
-  letter-spacing: 0.3px; transition: all 0.2s; border-top: 2px solid transparent;
-}
-.tab-btn.active { background: #fff; color: var(--blue); border-top: 2px solid var(--gold); }
-
-/* Tab panels */
-.tab-panel { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.tab-panel.active { display: flex; flex-direction: column; }
-
-/* FILTERS panel */
-#tab-filters { padding: 14px 16px; gap: 14px; }
-.filter-section { background: #f8f9fc; border-radius: var(--radius); padding: 12px 14px; border: 1px solid #ebeef5; }
-.filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 9px; display: flex; align-items: center; gap: 5px; }
-.filter-label .badge { background: var(--blue); color: white; border-radius: 10px; padding: 1px 6px; font-size: 9px; }
-input[type="text"], select {
-  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e3eb; border-radius: 8px;
-  font-size: 13px; font-family: 'Nunito', sans-serif; outline: none; background: #fff;
-  transition: border-color 0.2s;
-}
-input[type="text"]:focus, select:focus { border-color: var(--blue); }
-
-.tag-container { display: flex; flex-wrap: wrap; gap: 5px; }
-.stat-tag {
-  display: flex; align-items: center; gap: 4px;
-  padding: 5px 10px; border-radius: 20px; font-size: 11px; cursor: pointer;
-  transition: all 0.15s; border: 1.5px solid #e0e3eb; background: #fff;
-  font-weight: 700; user-select: none;
-}
-.stat-tag:hover { border-color: var(--blue); color: var(--blue); }
-.stat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
-.stat-tag .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.stat-tag .cnt { opacity: 0.65; font-size: 10px; }
-.stat-tag.active .cnt { opacity: 1; color: var(--gold); }
-
-/* Range slider */
-.range-wrap { position: relative; padding: 6px 0 20px; }
-.range-track-bg { position: absolute; top: 14px; left: 0; right: 0; height: 4px; background: #e0e3eb; border-radius: 2px; }
-.range-track-fill { position: absolute; top: 14px; height: 4px; background: var(--blue); border-radius: 2px; }
-.range-wrap input[type=range] {
-  position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 0;
-  -webkit-appearance: none; appearance: none; background: transparent;
-  border: none; height: 28px; pointer-events: none; outline: none;
-}
-.range-wrap input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none; pointer-events: all;
-  width: 18px; height: 18px; background: var(--blue); border-radius: 50%;
-  border: 2px solid white; box-shadow: 0 2px 6px rgba(0,87,183,0.4); cursor: pointer;
-}
-.range-wrap input[type=range]::-moz-range-thumb {
-  pointer-events: all; width: 18px; height: 18px; background: var(--blue);
-  border-radius: 50%; border: 2px solid white; cursor: pointer;
-}
-.range-labels { display: flex; justify-content: space-between; position: absolute; bottom: 0; left: 0; right: 0; }
-.range-labels span { font-size: 11px; font-weight: 800; color: var(--blue); }
-
-/* Toggle switches */
-.toggle-row { display: flex; justify-content: space-between; align-items: center; }
-.toggle-label { font-size: 12px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
-.toggle { position: relative; width: 38px; height: 20px; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.slider-toggle { position: absolute; cursor: pointer; inset: 0; background: #d0d5e8; border-radius: 20px; transition: 0.3s; }
-.slider-toggle:before { position: absolute; content: ""; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.3s; }
-.toggle input:checked + .slider-toggle { background: var(--blue); }
-.toggle input:checked + .slider-toggle:before { transform: translateX(18px); }
-
-/* Region group */
-#regionFilterGroup { background: #f0f7ff; border-radius: 8px; border: 1px dashed var(--blue); padding: 10px; margin-top: 8px; display: none; }
-
-/* LIST tab */
-#tab-list { padding: 12px; gap: 8px; }
-.list-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 4px; flex-shrink: 0; }
-.list-count { font-size: 11px; color: var(--muted); font-weight: 700; }
-.list-grid { display: flex; flex-direction: column; gap: 7px; padding-bottom: 10px; }
-.list-card {
-  display: flex; gap: 10px; background: #fff; border-radius: var(--radius);
-  border: 1px solid #ebeef5; padding: 10px; cursor: pointer;
-  transition: all 0.15s; align-items: center;
-}
-.list-card:hover { border-color: var(--blue); box-shadow: 0 3px 12px rgba(0,87,183,0.1); transform: translateY(-1px); }
-.list-card-img { width: 54px; height: 54px; border-radius: 7px; object-fit: cover; flex-shrink: 0; background: #ebeef5; }
-.list-card-body { flex: 1; min-width: 0; }
-.list-card-city { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.list-card-type { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; color: white; margin-top: 4px; }
-.list-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 20px; }
-
-/* STATS tab */
-#tab-stats { padding: 14px 16px; gap: 14px; }
-.stat-card { background: #f8f9fc; border: 1px solid #ebeef5; border-radius: var(--radius); padding: 14px; }
-.stat-card-title { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; margin-bottom: 12px; }
-.stat-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.stat-num-box { background: white; border-radius: 8px; padding: 10px; text-align: center; border: 1px solid #ebeef5; }
-.stat-num-val { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--blue); }
-.stat-num-label { font-size: 10px; color: var(--muted); font-weight: 700; margin-top: 2px; }
-.bar-chart { display: flex; flex-direction: column; gap: 5px; }
-.bar-row { display: flex; align-items: center; gap: 7px; font-size: 11px; }
-.bar-name { width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.bar-track { flex: 1; background: #e8eaf0; border-radius: 3px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width 0.5s; }
-.bar-val { width: 28px; text-align: right; color: var(--muted); font-weight: 700; flex-shrink: 0; }
-.decade-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; padding-bottom: 18px; position: relative; }
-.decade-col { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
-.decade-bar { width: 100%; background: var(--blue); border-radius: 3px 3px 0 0; transition: height 0.5s; min-height: 2px; }
-.decade-bar.gold { background: var(--gold-dark); }
-.decade-lbl { position: absolute; bottom: -16px; font-size: 8px; color: var(--muted); font-weight: 700; white-space: nowrap; }
-.donut-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; }
-.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.completeness-bars { display: flex; flex-direction: column; gap: 6px; }
-.comp-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
-.comp-name { width: 90px; flex-shrink: 0; font-weight: 600; }
-.comp-track { flex: 1; background: #e8eaf0; border-radius: 3px; height: 8px; overflow: hidden; }
-.comp-fill { height: 100%; border-radius: 3px; }
-.comp-pct { width: 32px; text-align: right; font-weight: 800; font-size: 10px; color: var(--muted); flex-shrink: 0; }
-
-/* COUNTER */
-#counter {
-  padding: 10px 16px; text-align: center; font-size: 11px; font-weight: 800;
-  color: var(--muted); border-top: 1px solid #ebeef5; letter-spacing: 0.3px; flex-shrink: 0;
-}
-#counter span { color: var(--blue); font-size: 14px; }
-
-/* MAP */
-#map-container { flex: 1; position: relative; height: 100%; }
-#map { width: 100%; height: 100%; }
-
-/* Map buttons */
-.map-fab {
-  position: absolute; z-index: 900; display: flex; flex-direction: column; gap: 8px;
-  right: 60px; bottom: 30px;
-}
-.map-btn {
-  background: white; border: none; border-radius: 50%; width: 42px; height: 42px;
-  box-shadow: var(--shadow); cursor: pointer; font-size: 18px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-  position: relative;
-}
-.map-btn:hover { transform: scale(1.08); box-shadow: 0 6px 25px rgba(0,0,0,0.18); }
-.map-btn.active { background: var(--blue); }
-.map-btn-tooltip {
-  position: absolute; right: 50px; background: #2a2d35; color: white;
-  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
-  white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s;
-}
-.map-btn:hover .map-btn-tooltip { opacity: 1; }
-
-.mobile-menu-btn {
-  display: none; position: absolute; top: 16px; left: 16px; z-index: 1000;
-  background: var(--blue); color: white; border: none;
-  padding: 11px 16px; border-radius: 50px; font-weight: 800;
-  box-shadow: var(--shadow); cursor: pointer; align-items: center; gap: 7px; font-size: 13px;
-  font-family: 'Nunito', sans-serif;
-}
-
-/* Legend on map */
-#map-legend {
-  position: absolute; bottom: 30px; left: 20px; z-index: 900;
-  background: white; border-radius: var(--radius); padding: 10px 12px;
-  box-shadow: var(--shadow); font-size: 10px; font-weight: 700;
-  display: flex; flex-direction: column; gap: 5px; max-width: 160px;
-}
-.leg-item { display: flex; align-items: center; gap: 7px; }
-.leg-marker { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.1); }
-.leg-marker.square { border-radius: 3px; }
-.leg-marker.diamond { border-radius: 0; transform: rotate(45deg); }
-.leg-marker.demont { opacity: 0.45; position: relative; }
-
-/* POPUP */
-.leaflet-popup-content-wrapper { border-radius: 14px !important; padding: 0 !important; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; }
-.leaflet-popup-content { margin: 0 !important; width: 360px !important; }
-.popup-card { display: flex; min-height: 190px; }
-.popup-photo-side { width: 120px; background: #e8eaf0; flex-shrink: 0; position: relative; overflow: hidden; }
-.popup-photo { width: 100%; height: 100%; object-fit: cover; }
-.popup-type-badge {
-  position: absolute; top: 8px; left: 8px;
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  padding: 3px 7px; border-radius: 10px; color: white; letter-spacing: 0.5px;
-}
-.popup-demont-badge {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,0.65); color: #fff; font-size: 9px; font-weight: 800;
-  text-align: center; padding: 4px; letter-spacing: 0.3px;
-}
-.popup-info { flex: 1; padding: 14px; display: flex; flex-direction: column; overflow: hidden; }
-.popup-title { font-family: 'Playfair Display', serif; font-size: 15px; color: #1a1c22; font-weight: 900; margin-bottom: 5px; line-height: 1.2; }
-.popup-detail { font-size: 11px; color: var(--muted); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
-.popup-desc { font-size: 11px; color: #555; margin-top: 7px; border-top: 1px solid #f0f0f5; padding-top: 7px; line-height: 1.4; flex-grow: 1; overflow: hidden; }
-.more-btn {
-  background: var(--blue); color: white; border: none; padding: 8px;
-  border-radius: 8px; cursor: pointer; margin-top: 10px; font-size: 11px; font-weight: 800;
-  width: 100%; font-family: 'Nunito', sans-serif; letter-spacing: 0.3px; transition: background 0.2s;
-}
-.more-btn:hover { background: #0049a0; }
-
-/* OBJECT PAGE */
-#object-page {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white;
-  z-index: 3000; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-.page-content { max-width: 1060px; margin: 0 auto; padding: 36px 24px; }
-.page-back {
-  display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px;
-  border: 1.5px solid #e0e3eb; background: white; border-radius: 8px;
-  cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Nunito', sans-serif;
-  margin-bottom: 24px; transition: all 0.2s; color: var(--text);
-}
-.page-back:hover { border-color: var(--blue); color: var(--blue); }
-.grid-main { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; }
-.main-img-full { width: 100%; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); aspect-ratio: 4/3; object-fit: cover; }
-.passport-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
-.passport-table td { padding: 9px 8px; border-bottom: 1px solid #f0f2f8; font-size: 13px; vertical-align: top; }
-.passport-table td:first-child { font-weight: 800; color: #9099b0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; width: 38%; }
-.section-title {
-  font-size: 10px; color: #b0b8cc; text-transform: uppercase; font-weight: 800;
-  margin: 22px 0 10px; border-bottom: 1px solid #f0f2f8; padding-bottom: 5px; letter-spacing: 0.8px;
-}
-.completeness-bar { display: flex; gap: 4px; margin-bottom: 18px; }
-.comp-seg { height: 5px; flex: 1; border-radius: 3px; }
-.comp-seg.filled { background: var(--blue); }
-.comp-seg.empty { background: #e0e3eb; }
-.comp-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
-.links-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-.ext-link-btn {
-  text-decoration: none; padding: 7px 12px; border-radius: 8px; font-size: 11px;
-  background: #f4f6fb; color: var(--text); font-weight: 700; border: 1px solid #e0e3eb;
-  display: flex; align-items: center; gap: 5px; transition: all 0.15s;
-}
-.ext-link-btn:hover { border-color: var(--blue); color: var(--blue); }
-.route-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: linear-gradient(135deg, #27ae60, #1e8449); color: white;
-  padding: 16px; text-decoration: none; border-radius: 12px;
-  font-weight: 800; font-size: 16px; margin: 18px 0; transition: all 0.2s;
-  font-family: 'Nunito', sans-serif;
-}
-.route-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(39,174,96,0.35); }
-.share-row { display: flex; gap: 8px; }
-.social-btn {
-  flex: 1; border: none; padding: 11px 8px; border-radius: 9px; cursor: pointer;
-  color: white; font-weight: 800; font-size: 11px; text-decoration: none;
-  text-align: center; font-family: 'Nunito', sans-serif; transition: opacity 0.2s;
-}
-.social-btn:hover { opacity: 0.85; }
-.demont-banner {
-  background: #fff3cd; border: 1.5px solid #ffcc02; border-radius: 10px;
-  padding: 12px 16px; margin-bottom: 20px; font-size: 13px; font-weight: 700; color: #856404;
-  display: flex; align-items: center; gap: 8px;
-}
-
-/* OVERLAY (mobile) */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1500; }
-.overlay.active { display: block; }
-
-/* Custom marker */
-.cmarker {
-  width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid rgba(0,0,0,0.15);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25); display: flex; align-items: center;
-  justify-content: center; font-size: 10px; transition: transform 0.15s;
-}
-.cmarker.square { border-radius: 4px; }
-.cmarker.diamond { border-radius: 3px; transform: rotate(45deg); }
-.cmarker.diamond-inner { transform: rotate(-45deg); font-size: 9px; }
-.cmarker.demont { opacity: 0.45; filter: grayscale(1); }
-
-/* Autocomplete */
-.autocomplete-wrap { position: relative; }
-#sculptorInput { padding-right: 28px; }
-#sculptorClear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; display: none; }
-
-@media (max-width: 768px) {
-  #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 88%; max-width: 320px; transform: translateX(-100%); }
-  #sidebar.open { transform: translateX(0); }
-  .close-btn { display: block; }
-  .mobile-menu-btn { display: flex; }
-  .leaflet-popup-content { width: 300px !important; }
-  .popup-desc { display: none; }
-  .grid-main { grid-template-columns: 1fr; }
-  .page-content { padding: 18px 14px; }
-  #map-legend { display: none; }
-  .map-fab { right: 14px; bottom: 80px; }
+:root{--blue:#0057b7;--gold:#ffd700;--gold-dark:#c8900a;--bg:#f2f4f8;--text:#2a2d35;--muted:#7a8090;--sidebar-w:410px;--radius:10px;--shadow:0 4px 20px rgba(0,0,0,0.12);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;display:flex;height:100vh;overflow:hidden;background:var(--bg);color:var(--text);}
+#sidebar{width:var(--sidebar-w);background:#fff;border-right:1px solid #e8eaf0;display:flex;flex-direction:column;z-index:2000;box-shadow:2px 0 20px rgba(0,0,0,0.08);transition:transform 0.3s ease;}
+.sidebar-header{padding:16px 20px 0;background:var(--blue);color:white;flex-shrink:0;}
+.sidebar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.sidebar-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;}
+.sidebar-title span{color:var(--gold);}
+.btn-reset{background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.4);padding:6px 14px;border-radius:20px;font-size:15px;cursor:pointer;font-weight:700;font-family:'Nunito',sans-serif;transition:background 0.2s;}
+.btn-reset:hover{background:rgba(255,255,255,0.3);}
+.close-btn{display:none;background:none;border:none;color:white;font-size:32px;cursor:pointer;line-height:1;padding:0 6px;}
+.tabs{display:flex;margin:0 -20px;}
+.tab-btn{flex:1;padding:11px 4px;background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.75);border:none;cursor:pointer;font-size:15px;font-weight:700;font-family:'Nunito',sans-serif;transition:all 0.2s;border-top:2px solid transparent;}
+.tab-btn.active{background:#fff;color:var(--blue);border-top:2px solid var(--gold);}
+.tab-panel{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.tab-panel.active{display:flex;flex-direction:column;}
+#tab-filters{padding:13px 15px;gap:11px;}
+.filter-section{background:#f8f9fc;border-radius:var(--radius);padding:13px 15px;border:1px solid #ebeef5;}
+.filter-label{font-size:14px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:0.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+input[type="text"]{width:100%;padding:10px 13px;border:1.5px solid #e0e3eb;border-radius:8px;font-size:18px;font-family:'Nunito',sans-serif;outline:none;background:#fff;transition:border-color 0.2s;}
+input[type="text"]:focus{border-color:var(--blue);}
+.tag-container{display:flex;flex-wrap:wrap;gap:6px;}
+.stat-tag{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:15px;cursor:pointer;transition:all 0.15s;border:1.5px solid #e0e3eb;background:#fff;font-weight:700;user-select:none;}
+.stat-tag:hover{border-color:var(--blue);color:var(--blue);}
+.stat-tag.active{background:var(--blue);color:white;border-color:var(--blue);}
+.stat-tag .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.stat-tag .cnt{opacity:0.65;font-size:13px;}
+.stat-tag.active .cnt{opacity:1;color:var(--gold);}
+.tag-scroll{max-height:170px;overflow-y:auto;border:1.5px solid #e0e3eb;border-radius:8px;background:#fff;padding:4px;}
+.tag-scroll-item{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:6px;cursor:pointer;font-size:15px;font-weight:700;transition:all 0.12s;border-bottom:1px solid #f0f2f8;}
+.tag-scroll-item:last-child{border-bottom:none;}
+.tag-scroll-item:hover{background:#f0f7ff;color:var(--blue);}
+.tag-scroll-item.active{background:var(--blue);color:white;}
+.tag-scroll-item .cnt-badge{font-size:13px;opacity:0.7;font-weight:700;}
+.tag-scroll-item.active .cnt-badge{opacity:1;color:var(--gold);}
+#regionPanel{margin-top:9px;display:none;background:#f0f7ff;border:1px dashed var(--blue);border-radius:8px;padding:9px;}
+.range-wrap{position:relative;padding:8px 0 24px;}
+.range-track-bg{position:absolute;top:16px;left:0;right:0;height:5px;background:#e0e3eb;border-radius:3px;}
+.range-track-fill{position:absolute;top:16px;height:5px;background:var(--blue);border-radius:3px;}
+.range-wrap input[type=range]{position:absolute;top:0;left:0;width:100%;margin:0;padding:0;-webkit-appearance:none;appearance:none;background:transparent;border:none;height:32px;pointer-events:none;outline:none;}
+.range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;pointer-events:all;width:20px;height:20px;background:var(--blue);border-radius:50%;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,87,183,0.4);cursor:pointer;}
+.range-wrap input[type=range]::-moz-range-thumb{pointer-events:all;width:20px;height:20px;background:var(--blue);border-radius:50%;border:2.5px solid white;cursor:pointer;}
+.range-labels{display:flex;justify-content:space-between;position:absolute;bottom:0;left:0;right:0;}
+.range-labels span{font-size:15px;font-weight:800;color:var(--blue);}
+.autocomplete-wrap{position:relative;}
+#sculptorClear{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:22px;display:none;line-height:1;}
+.seg-group{display:flex;flex-direction:column;gap:11px;}
+.seg-label{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.seg-ctrl{display:flex;border:1.5px solid #e0e3eb;border-radius:8px;overflow:hidden;background:#fff;}
+.seg-btn{flex:1;padding:9px 5px;background:transparent;border:none;cursor:pointer;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--muted);transition:all 0.15s;text-align:center;border-right:1px solid #e0e3eb;line-height:1.3;}
+.seg-btn:last-child{border-right:none;}
+.seg-btn.active{background:var(--blue);color:white;}
+.seg-btn:hover:not(.active){background:#f0f7ff;color:var(--blue);}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;}
+.toggle-label{font-size:17px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;}
+.toggle{position:relative;width:42px;height:23px;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider-toggle{position:absolute;cursor:pointer;inset:0;background:#d0d5e8;border-radius:23px;transition:0.3s;}
+.slider-toggle:before{position:absolute;content:"";width:17px;height:17px;left:3px;top:3px;background:white;border-radius:50%;transition:0.3s;}
+.toggle input:checked+.slider-toggle{background:var(--blue);}
+.toggle input:checked+.slider-toggle:before{transform:translateX(19px);}
+#tab-list{padding:12px;gap:8px;}
+.list-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 2px 5px;flex-shrink:0;}
+.list-count{font-size:15px;color:var(--muted);font-weight:700;}
+.list-grid{display:flex;flex-direction:column;gap:8px;padding-bottom:10px;}
+.list-card{display:flex;gap:11px;background:#fff;border-radius:var(--radius);border:1px solid #ebeef5;padding:11px;cursor:pointer;transition:all 0.15s;align-items:center;}
+.list-card:hover{border-color:var(--blue);box-shadow:0 3px 14px rgba(0,87,183,0.1);transform:translateY(-1px);}
+.list-card-img{width:58px;height:58px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#ebeef5;}
+.list-card-body{flex:1;min-width:0;}
+.list-card-city{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-card-sub{font-size:15px;color:var(--muted);margin-top:2px;}
+.list-card-type{display:inline-block;font-size:13px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:10px;color:white;margin-top:4px;}
+.list-empty{text-align:center;color:var(--muted);font-size:18px;padding:32px 20px;line-height:1.5;}
+#tab-stats{padding:14px 16px;gap:14px;}
+.stat-card{background:#f8f9fc;border:1px solid #ebeef5;border-radius:var(--radius);padding:14px;}
+.stat-card-title{font-size:14px;text-transform:uppercase;font-weight:800;color:var(--muted);letter-spacing:0.8px;margin-bottom:13px;}
+.stat-numbers{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.stat-num-box{background:white;border-radius:9px;padding:12px;text-align:center;border:1px solid #ebeef5;}
+.stat-num-val{font-family:'Playfair Display',serif;font-size:34px;font-weight:900;color:var(--blue);}
+.stat-num-label{font-size:14px;color:var(--muted);font-weight:700;margin-top:3px;}
+.bar-chart{display:flex;flex-direction:column;gap:7px;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:15px;}
+.bar-name{width:120px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+.bar-track{flex:1;background:#e8eaf0;border-radius:3px;height:9px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:var(--blue);transition:width 0.5s;}
+.bar-val{width:32px;text-align:right;color:var(--muted);font-weight:700;flex-shrink:0;}
+.decade-chart{display:flex;align-items:flex-end;gap:3px;height:90px;padding-bottom:22px;position:relative;}
+.decade-col{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
+.decade-bar{width:100%;background:var(--blue);border-radius:3px 3px 0 0;transition:height 0.5s;min-height:2px;}
+.decade-bar.gold{background:var(--gold-dark);}
+.decade-lbl{position:absolute;bottom:-18px;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.donut-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.completeness-bars{display:flex;flex-direction:column;gap:8px;}
+.comp-row{display:flex;align-items:center;gap:9px;font-size:15px;}
+.comp-name{width:100px;flex-shrink:0;font-weight:600;}
+.comp-track{flex:1;background:#e8eaf0;border-radius:3px;height:9px;overflow:hidden;}
+.comp-fill{height:100%;border-radius:3px;}
+.comp-pct{width:36px;text-align:right;font-weight:800;font-size:14px;color:var(--muted);flex-shrink:0;}
+#counter{padding:11px 16px;text-align:center;font-size:15px;font-weight:800;color:var(--muted);border-top:1px solid #ebeef5;letter-spacing:0.3px;flex-shrink:0;}
+#counter span{color:var(--blue);font-size:20px;}
+#map-container{flex:1;position:relative;height:100%;}
+#map{width:100%;height:100%;}
+.map-fab{position:absolute;z-index:900;display:flex;flex-direction:column;gap:9px;right:60px;bottom:30px;}
+.map-btn{background:white;border:none;border-radius:50%;width:46px;height:46px;box-shadow:var(--shadow);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;position:relative;}
+.map-btn:hover{transform:scale(1.08);box-shadow:0 6px 25px rgba(0,0,0,0.18);}
+.map-btn-tooltip{position:absolute;right:54px;background:#2a2d35;color:white;padding:5px 11px;border-radius:7px;font-size:15px;font-weight:700;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;}
+.map-btn:hover .map-btn-tooltip{opacity:1;}
+.mobile-menu-btn{display:none;position:absolute;top:16px;left:16px;z-index:1000;background:var(--blue);color:white;border:none;padding:12px 18px;border-radius:50px;font-weight:800;box-shadow:var(--shadow);cursor:pointer;align-items:center;gap:8px;font-size:18px;font-family:'Nunito',sans-serif;}
+#map-legend{position:absolute;bottom:30px;left:20px;z-index:900;background:white;border-radius:var(--radius);padding:11px 14px;box-shadow:var(--shadow);font-size:14px;font-weight:700;display:flex;flex-direction:column;gap:6px;max-width:180px;}
+.leg-item{display:flex;align-items:center;gap:8px;}
+.leg-marker{width:15px;height:15px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,0.1);}
+.leg-marker.square{border-radius:3px;}
+.leg-marker.diamond{border-radius:0;transform:rotate(45deg);}
+.leg-marker.demont{opacity:0.45;}
+.leaflet-popup-content-wrapper{border-radius:14px !important;padding:0 !important;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.15) !important;}
+.leaflet-popup-content{margin:0 !important;width:380px !important;}
+.popup-card{display:flex;min-height:200px;}
+.popup-photo-side{width:130px;background:#e8eaf0;flex-shrink:0;position:relative;overflow:hidden;}
+.popup-photo{width:100%;height:100%;object-fit:cover;}
+.popup-type-badge{position:absolute;top:9px;left:9px;font-size:11px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:10px;color:white;letter-spacing:0.4px;}
+.popup-demont-badge{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.68);color:#fff;font-size:13px;font-weight:800;text-align:center;padding:5px;letter-spacing:0.3px;}
+.popup-info{flex:1;padding:15px;display:flex;flex-direction:column;overflow:hidden;}
+.popup-title{font-family:'Playfair Display',serif;font-size:21px;color:#1a1c22;font-weight:900;margin-bottom:6px;line-height:1.2;}
+.popup-detail{font-size:15px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:5px;}
+.popup-desc{font-size:15px;color:#555;margin-top:8px;border-top:1px solid #f0f0f5;padding-top:8px;line-height:1.4;flex-grow:1;overflow:hidden;}
+.more-btn{background:var(--blue);color:white;border:none;padding:9px;border-radius:8px;cursor:pointer;margin-top:10px;font-size:15px;font-weight:800;width:100%;font-family:'Nunito',sans-serif;transition:background 0.2s;}
+.more-btn:hover{background:#0049a0;}
+#object-page{position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:3000;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.page-content{max-width:1060px;margin:0 auto;padding:36px 24px;}
+.page-nav{display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;}
+.page-back,.page-rand{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:1.5px solid #e0e3eb;background:white;border-radius:9px;cursor:pointer;font-weight:700;font-size:18px;font-family:'Nunito',sans-serif;transition:all 0.2s;color:var(--text);text-decoration:none;}
+.page-back:hover{border-color:var(--blue);color:var(--blue);}
+.page-rand{background:var(--blue);color:white;border-color:var(--blue);}
+.page-rand:hover{background:#0049a0;}
+.grid-main{display:grid;grid-template-columns:1.1fr 1fr;gap:36px;}
+.main-img-full{width:100%;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.12);aspect-ratio:4/3;object-fit:cover;}
+.passport-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+.passport-table td{padding:10px 9px;border-bottom:1px solid #f0f2f8;font-size:20px;vertical-align:top;}
+.passport-table td:first-child{font-weight:800;color:#9099b0;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;width:38%;}
+.section-title{font-size:15px;color:#b0b8cc;text-transform:uppercase;font-weight:800;margin:22px 0 11px;border-bottom:1px solid #f0f2f8;padding-bottom:6px;letter-spacing:0.8px;}
+.comp-label{font-size:15px;color:var(--muted);font-weight:600;margin-bottom:7px;}
+.completeness-bar{display:flex;gap:4px;margin-bottom:20px;}
+.comp-seg{height:6px;flex:1;border-radius:3px;}
+.comp-seg.filled{background:var(--blue);}
+.comp-seg.empty{background:#e0e3eb;}
+.links-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.ext-link-btn{text-decoration:none;padding:8px 13px;border-radius:8px;font-size:15px;background:#f4f6fb;color:var(--text);font-weight:700;border:1px solid #e0e3eb;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+.ext-link-btn:hover{border-color:var(--blue);color:var(--blue);}
+.route-btn{display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,#27ae60,#1e8449);color:white;padding:18px;text-decoration:none;border-radius:13px;font-weight:800;font-size:22px;margin:20px 0;transition:all 0.2s;font-family:'Nunito',sans-serif;}
+.route-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(39,174,96,0.35);}
+.share-row{display:flex;gap:9px;}
+.social-btn{flex:1;border:none;padding:13px 9px;border-radius:10px;cursor:pointer;color:white;font-weight:800;font-size:15px;text-decoration:none;text-align:center;font-family:'Nunito',sans-serif;transition:opacity 0.2s;}
+.social-btn:hover{opacity:0.85;}
+.demont-banner{background:#fff3cd;border:1.5px solid #ffcc02;border-radius:10px;padding:13px 18px;margin-bottom:22px;font-size:18px;font-weight:700;color:#856404;display:flex;align-items:center;gap:9px;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1500;}
+.overlay.active{display:block;}
+.cmarker{width:26px;height:26px;border-radius:50%;border:2.5px solid rgba(0,0,0,0.15);box-shadow:0 3px 9px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-size:11px;}
+.cmarker.square{border-radius:4px;}
+.cmarker.diamond{border-radius:3px;transform:rotate(45deg);}
+.diamond-inner{transform:rotate(-45deg);font-size:10px;}
+.cmarker.demont{opacity:0.42;filter:grayscale(1);}
+/* ===== GAME ===== */
+#game-overlay{position:fixed;inset:0;z-index:5000;display:none;flex-direction:column;background:#0d1117;}
+#game-overlay.active{display:flex;}
+.game-header{background:#0d1117;color:white;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2530;flex-shrink:0;}
+.game-logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--gold);}
+.game-score-bar{display:flex;align-items:center;gap:18px;}
+.game-round-lbl{font-size:14px;font-weight:700;color:#8899aa;}
+.game-pts{font-size:22px;font-weight:900;color:var(--gold);font-family:'Playfair Display',serif;}
+.game-close{background:rgba(255,255,255,0.08);border:none;color:white;font-size:22px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.game-close:hover{background:rgba(255,255,255,0.18);}
+.game-body{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;}
+.game-photo-side{position:relative;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.game-photo{max-width:100%;max-height:100%;object-fit:contain;}
+.game-hint-box{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.85));padding:20px 22px 18px;color:white;}
+.game-hint-title{font-size:13px;font-weight:800;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.game-clues{display:flex;gap:8px;flex-wrap:wrap;}
+.game-clue{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);}
+.game-map-side{position:relative;}
+#game-map{width:100%;height:100%;}
+.game-map-prompt{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:#0d1117;color:white;padding:9px 18px;border-radius:20px;font-size:14px;font-weight:800;z-index:1000;pointer-events:none;box-shadow:var(--shadow);white-space:nowrap;}
+.game-guess-btn{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--gold);color:#000;border:none;padding:13px 32px;border-radius:30px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.2s;white-space:nowrap;}
+.game-guess-btn:hover{transform:translateX(-50%) scale(1.04);box-shadow:0 6px 28px rgba(0,0,0,0.4);}
+.game-guess-btn:disabled{background:#555;color:#999;cursor:default;transform:translateX(-50%);}
+/* Result screen */
+.game-result{position:absolute;inset:0;background:rgba(13,17,23,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;padding:28px;text-align:center;}
+.result-dist{font-family:'Playfair Display',serif;font-size:52px;font-weight:900;color:var(--gold);line-height:1;}
+.result-dist-lbl{font-size:16px;font-weight:700;color:#8899aa;margin-top:4px;margin-bottom:18px;}
+.result-pts-row{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+.result-pts-val{font-size:36px;font-weight:900;color:white;font-family:'Playfair Display',serif;}
+.result-pts-max{font-size:16px;color:#8899aa;font-weight:700;}
+.result-stars{font-size:32px;letter-spacing:4px;margin-bottom:18px;}
+.result-place{font-size:17px;font-weight:700;color:white;margin-bottom:22px;line-height:1.4;}
+.result-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.result-btn{padding:11px 24px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.result-btn.primary{background:var(--gold);color:#000;}
+.result-btn.primary:hover{background:#e5c200;}
+.result-btn.secondary{background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);}
+.result-btn.secondary:hover{background:rgba(255,255,255,0.18);}
+/* Final screen */
+.game-final{position:fixed;inset:0;z-index:6000;background:#0d1117;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;}
+.game-final.active{display:flex;}
+.final-title{font-family:'Playfair Display',serif;font-size:42px;font-weight:900;color:var(--gold);margin-bottom:8px;}
+.final-subtitle{font-size:18px;color:#8899aa;font-weight:700;margin-bottom:30px;}
+.final-total{font-family:'Playfair Display',serif;font-size:80px;font-weight:900;color:white;line-height:1;}
+.final-total-lbl{font-size:18px;color:#8899aa;font-weight:700;margin-top:6px;margin-bottom:24px;}
+.final-rounds{display:flex;flex-direction:column;gap:9px;width:100%;max-width:360px;margin-bottom:28px;}
+.final-round-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 16px;font-size:15px;font-weight:700;color:white;}
+.final-round-row .rdist{color:#8899aa;}
+.final-round-row .rpts{color:var(--gold);}
+.final-btns{display:flex;gap:12px;}
+.final-btn{padding:14px 30px;border-radius:12px;font-size:17px;font-weight:900;cursor:pointer;border:none;font-family:'Nunito',sans-serif;transition:all 0.2s;}
+.final-btn.primary{background:var(--gold);color:#000;}
+.final-btn.secondary{background:rgba(255,255,255,0.1);color:white;}
+/* nav on object page */
+.page-nav-row{display:flex;gap:9px;margin-bottom:26px;flex-wrap:wrap;align-items:center;}
+.page-nav-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border:1.5px solid #e0e3eb;background:white;border-radius:9px;cursor:pointer;font-weight:700;font-size:15px;font-family:'Nunito',sans-serif;transition:all 0.2s;color:var(--text);}
+.page-nav-btn:hover{border-color:var(--blue);color:var(--blue);}
+.page-nav-btn.primary{background:var(--blue);color:white;border-color:var(--blue);}
+.page-nav-btn.primary:hover{background:#0049a0;}
+.page-nav-btn.gold{background:var(--gold-dark);color:white;border-color:var(--gold-dark);}
+.page-nav-btn.gold:hover{background:#a07008;}
+.page-nav-btn:disabled{opacity:0.4;cursor:default;pointer-events:none;}
+.page-nav-pos{font-size:14px;color:var(--muted);font-weight:700;padding:0 4px;}
+@media(max-width:800px){
+  .game-body{grid-template-columns:1fr;grid-template-rows:40vh 1fr;}
+  .game-photo-side{height:40vh;}
+  .final-total{font-size:56px;}
+  .final-btn{padding:11px 20px;font-size:15px;}
+  #sidebar{position:fixed;top:0;left:0;height:100%;width:90%;max-width:380px;transform:translateX(-100%);}
+  #sidebar.open{transform:translateX(0);}
+  .close-btn{display:block;}
+  .mobile-menu-btn{display:flex;}
+  .leaflet-popup-content{width:310px !important;}
+  .popup-desc{display:none;}
+  .grid-main{grid-template-columns:1fr;}
+  .page-content{padding:18px 14px;}
+  #map-legend{display:none;}
+  .map-fab{right:14px;bottom:80px;}
 }
 </style>
 </head>
 <body>
-
 <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
-
-<!-- ========== SIDEBAR ========== -->
 <div id="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-top">
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:9px">
         <button class="close-btn" onclick="toggleSidebar()">×</button>
         <div class="sidebar-title">Шевченко <span>360°</span></div>
       </div>
@@ -348,733 +275,723 @@ input[type="text"]:focus, select:focus { border-color: var(--blue); }
       <button class="tab-btn" onclick="switchTab('stats',this)">📊 Статистика</button>
     </div>
   </div>
-
-  <!-- FILTERS TAB -->
   <div id="tab-filters" class="tab-panel active">
-
     <div class="filter-section">
       <div class="filter-label">🔎 Пошук</div>
-      <input type="text" id="search" placeholder="Місто, країна, адреса, автор...">
+      <input type="text" id="search" placeholder="Місто, країна, автор...">
     </div>
-
     <div class="filter-section">
       <div class="filter-label">🗿 Тип об'єкта</div>
       <div id="typeTags" class="tag-container"></div>
     </div>
-
     <div class="filter-section">
       <div class="filter-label">👁 Вигляд (таксономія)</div>
       <div id="viewTags" class="tag-container"></div>
     </div>
-
     <div class="filter-section">
-      <div class="filter-label">📅 Рік встановлення</div>
-      <div class="range-wrap" id="yearRangeWrap">
+      <div class="filter-label">📅 Роки встановлення</div>
+      <div class="range-wrap">
         <div class="range-track-bg"></div>
         <div class="range-track-fill" id="rangeTrack"></div>
         <input type="range" id="yearMin" min="1860" max="2025" value="1860" step="1">
         <input type="range" id="yearMax" min="1860" max="2025" value="2025" step="1">
-        <div class="range-labels">
-          <span id="yearMinLbl">1860</span>
-          <span id="yearMaxLbl">2025</span>
-        </div>
+        <div class="range-labels"><span id="yearMinLbl">1860</span><span id="yearMaxLbl">2025</span></div>
       </div>
     </div>
-
     <div class="filter-section">
       <div class="filter-label">🎨 Скульптор</div>
       <div class="autocomplete-wrap">
-        <input type="text" id="sculptorInput" list="sculptorList" placeholder="Почніть вводити ім'я...">
+        <input type="text" id="sculptorInput" list="sculptorList" placeholder="Ім'я скульптора...">
         <button id="sculptorClear" onclick="clearSculptor()">×</button>
         <datalist id="sculptorList"></datalist>
       </div>
     </div>
-
     <div class="filter-section">
-      <div class="filter-label">🌍 Географія</div>
-      <select id="fCountry" style="margin-bottom:8px">
-        <option value="all">Усі країни</option>
-      </select>
-      <div id="regionFilterGroup">
-        <select id="fRegion"><option value="all">Усі області України</option></select>
+      <div class="filter-label">🌍 Країна</div>
+      <div id="countryTags" class="tag-scroll"></div>
+      <div id="regionPanel">
+        <div class="filter-label" style="font-size:13px;color:var(--blue);margin-bottom:7px;margin-top:4px">📍 Область</div>
+        <div id="regionTags" class="tag-scroll"></div>
       </div>
     </div>
-
     <div class="filter-section">
       <div class="filter-label">⚙️ Додаткові фільтри</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="toggle-row">
-          <div class="toggle-label">📸 Тільки з фото</div>
-          <label class="toggle"><input type="checkbox" id="togglePhoto" onchange="renderMap()"><span class="slider-toggle"></span></label>
+      <div class="seg-group">
+        <div>
+          <div class="seg-label">📸 Фото</div>
+          <div class="seg-ctrl" id="photoCtrl">
+            <button class="seg-btn active" data-val="all" onclick="setSegment('photo','all',this)">Всі</button>
+            <button class="seg-btn" data-val="with" onclick="setSegment('photo','with',this)">З фото</button>
+            <button class="seg-btn" data-val="without" onclick="setSegment('photo','without',this)">Без фото</button>
+          </div>
+        </div>
+        <div>
+          <div class="seg-label">🚫 Демонтовані</div>
+          <div class="seg-ctrl" id="demontCtrl">
+            <button class="seg-btn active" data-val="hide" onclick="setSegment('demont','hide',this)">Без них</button>
+            <button class="seg-btn" data-val="show" onclick="setSegment('demont','show',this)">+ Показати</button>
+            <button class="seg-btn" data-val="only" onclick="setSegment('demont','only',this)">Тільки</button>
+          </div>
         </div>
         <div class="toggle-row">
           <div class="toggle-label">📚 Тільки з Вікіпедією</div>
           <label class="toggle"><input type="checkbox" id="toggleWiki" onchange="renderMap()"><span class="slider-toggle"></span></label>
         </div>
-        <div class="toggle-row">
-          <div class="toggle-label">🚫 Показати демонтовані</div>
-          <label class="toggle"><input type="checkbox" id="toggleDemont" onchange="renderMap()"><span class="slider-toggle"></span></label>
-        </div>
       </div>
     </div>
-
-  </div><!-- /tab-filters -->
-
-  <!-- LIST TAB -->
+  </div>
   <div id="tab-list" class="tab-panel">
-    <div class="list-toolbar">
-      <div class="list-count" id="listCount">Завантаження...</div>
-    </div>
+    <div class="list-toolbar"><div class="list-count" id="listCount">Завантаження...</div></div>
     <div id="listGrid" class="list-grid"></div>
   </div>
-
-  <!-- STATS TAB -->
   <div id="tab-stats" class="tab-panel">
-
-    <div class="stat-card">
-      <div class="stat-card-title">📌 Загальна статистика</div>
-      <div class="stat-numbers" id="statsNumbers"></div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-card-title">🌍 Топ країн</div>
-      <div id="statsCountries" class="bar-chart"></div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-card-title">🗿 Розподіл за типом</div>
-      <div id="statsTypes" class="donut-legend"></div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-card-title">📅 По десятиліттях</div>
-      <div id="statsDecades" class="decade-chart"></div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-card-title">✅ Повнота даних</div>
-      <div id="statsCompleteness" class="completeness-bars"></div>
-    </div>
-
-  </div><!-- /tab-stats -->
-
+    <div class="stat-card"><div class="stat-card-title">📌 Загальна статистика</div><div class="stat-numbers" id="statsNumbers"></div></div>
+    <div class="stat-card"><div class="stat-card-title">🌍 Топ країн</div><div id="statsCountries" class="bar-chart"></div></div>
+    <div class="stat-card"><div class="stat-card-title">🗿 Розподіл за типом</div><div id="statsTypes" class="donut-legend"></div></div>
+    <div class="stat-card"><div class="stat-card-title">📅 По десятиліттях</div><div id="statsDecades" class="decade-chart"></div></div>
+    <div class="stat-card"><div class="stat-card-title">✅ Повнота даних</div><div id="statsCompleteness" class="completeness-bars"></div></div>
+  </div>
   <div id="counter">Завантаження...</div>
 </div>
-
-<!-- ========== MAP ========== -->
 <div id="map-container">
   <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Фільтри</button>
   <div id="map"></div>
-
   <div class="map-fab">
-    <button class="map-btn" id="btnGeo" onclick="geolocate()" title="">
-      📍<span class="map-btn-tooltip">Моє місцезнаходження</span>
-    </button>
-    <button class="map-btn" onclick="openRandom()" title="">
-      🎲<span class="map-btn-tooltip">Випадковий об'єкт</span>
-    </button>
-  </div>
-
-  <div id="map-legend">
-    <div style="font-size:9px;font-weight:800;color:#9099b0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Тип об'єкта</div>
-  </div>
+    <button class="map-btn" id="btnGeo" onclick="geolocate()">📍<span class="map-btn-tooltip">Моє місцезнаходження</span></button>
+    <button class="map-btn" onclick="openRandom()">🎲<span class="map-btn-tooltip">Випадковий об'єкт</span></button>
+  <button class="map-btn" onclick="startGame()">🎯<span class="map-btn-tooltip">Відгадай де!</span></button>
+<div style="font-size:13px;font-weight:800;color:#9099b0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Тип об'єкта</div></div>
 </div>
-
-<!-- OBJECT PAGE -->
 <div id="object-page">
   <div class="page-content">
-    <button class="page-back" onclick="closePage()">← Назад до карти</button>
+    <div class="page-nav-row" id="pageNavRow">
+      <button class="page-nav-btn" onclick="closePage()">← Назад</button>
+      <button class="page-nav-btn" id="btnPrev" onclick="navObject(-1)">‹ Попередній</button>
+      <span class="page-nav-pos" id="navPos"></span>
+      <button class="page-nav-btn" id="btnNext" onclick="navObject(1)">Наступний ›</button>
+      <button class="page-nav-btn gold" onclick="openRandom()">🎲 Випадковий</button>
+    </div>
     <div id="details"></div>
   </div>
 </div>
 
+<!-- GAME OVERLAY -->
+<div id="game-overlay">
+  <div class="game-header">
+    <div class="game-logo">🗿 Відгадай де!</div>
+    <div class="game-score-bar">
+      <span class="game-round-lbl" id="gameRoundLbl">Раунд 1 / 5</span>
+      <span class="game-pts" id="gameTotalPts">0 балів</span>
+    </div>
+    <button class="game-close" onclick="closeGame()" title="Закрити">✕</button>
+  </div>
+  <div class="game-body">
+    <div class="game-photo-side">
+      <img id="gamePhoto" class="game-photo" src="" alt="">
+      <div class="game-hint-box">
+        <div class="game-hint-title">Підказки</div>
+        <div class="game-clues" id="gameClues"></div>
+      </div>
+    </div>
+    <div class="game-map-side">
+      <div class="game-map-prompt" id="gameMapPrompt">👆 Клікни на карті де стоїть цей пам'ятник</div>
+      <div id="game-map"></div>
+      <button class="game-guess-btn" id="gameGuessBtn" disabled onclick="confirmGuess()">Підтвердити відповідь</button>
+      <div class="game-result" id="gameResult" style="display:none">
+        <div class="result-dist" id="resDist"></div>
+        <div class="result-dist-lbl">км від правильної відповіді</div>
+        <div class="result-pts-row">
+          <div class="result-pts-val" id="resPts"></div>
+          <div class="result-pts-max">/ 5000 балів</div>
+        </div>
+        <div class="result-stars" id="resStars"></div>
+        <div class="result-place" id="resPlace"></div>
+        <div class="result-btns">
+          <button class="result-btn primary" onclick="nextRound()">Наступний раунд ›</button>
+          <button class="result-btn secondary" onclick="openCurrentOnMap()">📍 Показати на карті</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL SCREEN -->
+<div class="game-final" id="gameFinal">
+  <div class="final-title">Гра завершена!</div>
+  <div class="final-subtitle" id="finalSubtitle"></div>
+  <div class="final-total" id="finalTotal"></div>
+  <div class="final-total-lbl">балів з 25 000 можливих</div>
+  <div class="final-rounds" id="finalRounds"></div>
+  <div class="final-btns">
+    <button class="final-btn primary" onclick="startGame()">🎲 Грати знову</button>
+    <button class="final-btn secondary" onclick="closeGame()">← На карту</button>
+  </div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
 <script>
-// ===== MAP INIT =====
-const map = L.map('map', { zoomControl: false }).setView([48.5, 31.2], 5);
-L.control.zoom({ position: 'bottomright' }).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap contributors © CARTO'
-}).addTo(map);
-
-const markersCluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 50 });
+const map=L.map('map',{zoomControl:false}).setView([48.5,31.2],5);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap contributors © CARTO'}).addTo(map);
+const markersCluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:50});
 map.addLayer(markersCluster);
 
-// ===== TYPE CONFIG =====
-const TYPE_CONFIG = {
-  "пам'ятник":                { color: '#0057b7', bg: '#0057b7', shape: 'round', label: "Пам'ятник" },
-  'погруддя':                 { color: '#c8900a', bg: '#c8900a', shape: 'round', label: 'Погруддя' },
-  'меморіальна дошка':        { color: '#27a465', bg: '#27a465', shape: 'square', label: 'Мем. дошка' },
-  'барельєф':                 { color: '#8e44ad', bg: '#8e44ad', shape: 'diamond', label: 'Барельєф' },
-  "пам'ятний знак":           { color: '#e04040', bg: '#e04040', shape: 'round', label: "Пам. знак" },
-  'стела':                    { color: '#16a085', bg: '#16a085', shape: 'round', label: 'Стела' },
-  'скульптура':               { color: '#d35400', bg: '#d35400', shape: 'round', label: 'Скульптура' },
-  'меморіальна дошка-барельєф':{ color: '#5d6d7e', bg: '#5d6d7e', shape: 'square', label: 'Дошка-барельєф' },
-  "пам'ятний хрест":          { color: '#922b21', bg: '#922b21', shape: 'round', label: "Пам. хрест" },
-  'мініатюра':                { color: '#f0b429', bg: '#f0b429', shape: 'round', label: 'Мініатюра' },
-  'горельєф':                 { color: '#2471a3', bg: '#2471a3', shape: 'round', label: 'Горельєф' },
-  'default':                  { color: '#7a8090', bg: '#7a8090', shape: 'round', label: 'Інше' },
+const TYPE_CONFIG={
+  "пам'ятник":{color:'#0057b7',shape:'round',label:"Пам'ятник"},
+  'погруддя':{color:'#c8900a',shape:'round',label:'Погруддя'},
+  'меморіальна дошка':{color:'#27a465',shape:'square',label:'Мем. дошка'},
+  'барельєф':{color:'#8e44ad',shape:'diamond',label:'Барельєф'},
+  "пам'ятний знак":{color:'#e04040',shape:'round',label:"Пам. знак"},
+  'стела':{color:'#16a085',shape:'round',label:'Стела'},
+  'скульптура':{color:'#d35400',shape:'round',label:'Скульптура'},
+  'меморіальна дошка-барельєф':{color:'#5d6d7e',shape:'square',label:'Дошка-барельєф'},
+  "пам'ятний хрест":{color:'#922b21',shape:'round',label:"Пам. хрест"},
+  'мініатюра':{color:'#f0b429',shape:'round',label:'Мініатюра'},
+  'горельєф':{color:'#2471a3',shape:'round',label:'Горельєф'},
+  'default':{color:'#7a8090',shape:'round',label:'Інше'},
 };
+const getTypeConf=t=>TYPE_CONFIG[t]||TYPE_CONFIG.default;
 
-function getTypeConf(type) {
-  return TYPE_CONFIG[type] || TYPE_CONFIG.default;
+function createIcon(type,isDemolished){
+  const conf=getTypeConf(type);
+  const color=isDemolished?'#888':conf.color;
+  const shape=isDemolished?'round':conf.shape;
+  const cls='cmarker'+(shape==='square'?' square':'')+(shape==='diamond'?' diamond':'')+(isDemolished?' demont':'');
+  const inner=shape==='diamond'?'<div class="diamond-inner">◆</div>':'';
+  return L.divIcon({html:'<div class="'+cls+'" style="background:'+color+'">'+inner+'</div>',className:'',iconSize:[26,26],iconAnchor:[13,13],popupAnchor:[0,-15]});
 }
 
-function createIcon(type, isDemolished) {
-  const conf = getTypeConf(type);
-  const color = isDemolished ? '#888' : conf.color;
-  const shape = isDemolished ? 'round' : conf.shape;
-  let cls = 'cmarker' + (shape === 'square' ? ' square' : '') + (shape === 'diamond' ? ' diamond' : '') + (isDemolished ? ' demont' : '');
-  const inner = shape === 'diamond' ? `<div class="diamond-inner">◆</div>` : '';
-  const html = `<div class="${cls}" style="background:${color};border-color:rgba(0,0,0,0.2)">${inner}</div>`;
-  return L.divIcon({
-    html, className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+function buildLegend(){
+  const leg=document.getElementById('map-legend');
+  const used=new Set(rawData.map(i=>getVal(i,'type')));
+  Object.entries(TYPE_CONFIG).forEach(([type,conf])=>{
+    if(type==='default'||!used.has(type))return;
+    const d=document.createElement('div');d.className='leg-item';
+    d.innerHTML='<div class="leg-marker '+(conf.shape==='square'?'square':conf.shape==='diamond'?'diamond':'')+'" style="background:'+conf.color+'"></div><span>'+conf.label+'</span>';
+    leg.appendChild(d);
   });
+  const dd=document.createElement('div');dd.className='leg-item';
+  dd.innerHTML='<div class="leg-marker demont" style="background:#888"></div><span>Демонтований</span>';
+  leg.appendChild(dd);
 }
 
-// Build legend
-function buildLegend() {
-  const leg = document.getElementById('map-legend');
-  const used = new Set(rawData.map(i => getVal(i, 'type')));
-  Object.entries(TYPE_CONFIG).forEach(([type, conf]) => {
-    if (type === 'default' || !used.has(type)) return;
-    const div = document.createElement('div');
-    div.className = 'leg-item';
-    div.innerHTML = `<div class="leg-marker ${conf.shape === 'square' ? 'square' : conf.shape === 'diamond' ? 'diamond' : ''}" style="background:${conf.color}"></div><span>${conf.label}</span>`;
-    leg.appendChild(div);
-  });
-  const demDiv = document.createElement('div');
-  demDiv.className = 'leg-item';
-  demDiv.innerHTML = `<div class="leg-marker demont" style="background:#888"></div><span>Демонтований</span>`;
-  leg.appendChild(demDiv);
-}
+const csvUrl='https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
+let rawData=[],activeType='all',activeView='all',activeCountry='all',activeRegion='all';
+let yearMin=1860,yearMax=2025,photoMode='all',demontMode='hide',currentFiltered=[];
 
-// ===== DATA =====
-const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
-let rawData = [];
-let activeType = 'all', activeView = 'all';
-let yearMin = 1860, yearMax = 2025;
-let currentFiltered = [];
+const getVal=(obj,key)=>{if(!obj)return'';const k=Object.keys(obj).find(k=>k.trim().toLowerCase()===key.trim().toLowerCase());return k?(obj[k]||'').trim():'';};
+const extractYear=str=>{if(!str)return null;const m=str.match(/\d{4}/);return m?parseInt(m[0]):null;};
+const NO_PHOTO_SVG="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23ebeef5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='36' fill='%23b0b8cc'%3E🗿%3C/text%3E%3C/svg%3E";
 
-const getVal = (obj, key) => {
-  if (!obj) return '';
-  const k = Object.keys(obj).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
-  return k ? (obj[k] || '').trim() : '';
-};
-
-const extractYear = (str) => {
-  if (!str) return null;
-  const m = str.match(/\d{4}/);
-  return m ? parseInt(m[0]) : null;
-};
-
-const NO_PHOTO_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23ebeef5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23b0b8cc'%3E🗿%3C/text%3E%3C/svg%3E`;
-
-Papa.parse(csvUrl, {
-  download: true, header: true, skipEmptyLines: true,
-  complete: (results) => {
-    rawData = results.data.filter(i => getVal(i, 'lat'));
-    init();
-  },
-  error: () => { document.getElementById('counter').innerText = 'Помилка завантаження даних'; }
+Papa.parse(csvUrl,{download:true,header:true,skipEmptyLines:true,
+  complete:r=>{rawData=r.data.filter(i=>getVal(i,'lat'));init();},
+  error:()=>{document.getElementById('counter').innerText='Помилка завантаження';}
 });
 
-function init() {
-  // Countries
-  const fc = document.getElementById('fCountry');
-  const fr = document.getElementById('fRegion');
-  const countryCounts = {};
-  rawData.forEach(i => { const c = getVal(i,'Country'); if(c) countryCounts[c]=(countryCounts[c]||0)+1; });
-  const sortedC = Object.keys(countryCounts).sort((a,b)=>{
-    if(a==='Україна'||a==='Ukraine') return -1;
-    if(b==='Україна'||b==='Ukraine') return 1;
-    return a.localeCompare(b,'uk');
-  });
-  sortedC.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
+function init(){
+  buildCountryTags();
+  buildSculptorList();
+  initYearSlider();
+  buildLegend();
+  loadUrlParams();
+  buildStats();
+  renderMap();
+  const id=new URLSearchParams(window.location.search).get('id');
+  if(id)openPage(id);
+}
 
-  const regionCounts = {};
+function buildCountryTags(){
+  const cC={};
+  rawData.forEach(i=>{const c=getVal(i,'Country');if(c)cC[c]=(cC[c]||0)+1;});
+  const sorted=Object.keys(cC).sort((a,b)=>{
+    if(a==='Україна'||a==='Ukraine')return -1;
+    if(b==='Україна'||b==='Ukraine')return 1;
+    return cC[b]-cC[a];
+  });
+  const ct=document.getElementById('countryTags');ct.innerHTML='';
+  const allRow=document.createElement('div');allRow.className='tag-scroll-item active';allRow.dataset.val='all';
+  allRow.innerHTML='<span>🌐 Усі країни</span><span class="cnt-badge">'+rawData.length+'</span>';
+  allRow.onclick=()=>selectCountry('all');ct.appendChild(allRow);
+  sorted.forEach(c=>{
+    const row=document.createElement('div');row.className='tag-scroll-item';row.dataset.val=c;
+    row.innerHTML='<span>'+c+'</span><span class="cnt-badge">'+cC[c]+'</span>';
+    row.onclick=()=>selectCountry(c);ct.appendChild(row);
+  });
+  buildRegionTags();
+}
+
+function buildRegionTags(){
+  const rC={};
   rawData.filter(i=>getVal(i,'Country').includes('Україна')||getVal(i,'Country')==='Ukraine')
-    .forEach(i=>{ const r=getVal(i,'Region'); if(r) regionCounts[r]=(regionCounts[r]||0)+1; });
-  Object.keys(regionCounts).sort((a,b)=>a.localeCompare(b,'uk'))
-    .forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
-
-  fc.addEventListener('change', () => {
-    const isUa = fc.value.includes('Україна') || fc.value.toLowerCase()==='ukraine';
-    document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
-    if(!isUa) fr.value='all';
-    updateUrlParams(); renderMap();
+    .forEach(i=>{const r=getVal(i,'Region');if(r)rC[r]=(rC[r]||0)+1;});
+  const sorted=Object.keys(rC).sort((a,b)=>rC[b]-rC[a]);
+  const rt=document.getElementById('regionTags');rt.innerHTML='';
+  const allRow=document.createElement('div');allRow.className='tag-scroll-item active';allRow.dataset.val='all';
+  allRow.innerHTML='<span>Всі області</span><span class="cnt-badge">'+Object.values(rC).reduce((a,b)=>a+b,0)+'</span>';
+  allRow.onclick=()=>selectRegion('all');rt.appendChild(allRow);
+  sorted.forEach(r=>{
+    const row=document.createElement('div');row.className='tag-scroll-item';row.dataset.val=r;
+    row.innerHTML='<span>'+r+'</span><span class="cnt-badge">'+rC[r]+'</span>';
+    row.onclick=()=>selectRegion(r);rt.appendChild(row);
   });
-  fr.addEventListener('change', () => { updateUrlParams(); renderMap(); });
-  document.getElementById('search').addEventListener('input', () => { updateUrlParams(); renderMap(); });
-  document.getElementById('sculptorInput').addEventListener('input', () => {
-    const v = document.getElementById('sculptorInput').value;
-    document.getElementById('sculptorClear').style.display = v ? 'block' : 'none';
+}
+
+function selectCountry(val){
+  activeCountry=val;activeRegion='all';
+  document.querySelectorAll('#countryTags .tag-scroll-item').forEach(el=>el.classList.toggle('active',el.dataset.val===val));
+  const isUa=val!=='all'&&(val.includes('Україна')||val.toLowerCase()==='ukraine');
+  document.getElementById('regionPanel').style.display=isUa?'block':'none';
+  document.querySelectorAll('#regionTags .tag-scroll-item').forEach(el=>el.classList.toggle('active',el.dataset.val==='all'));
+  if(val!=='all'){
+    const pts=rawData.filter(i=>getVal(i,'Country')===val).map(i=>[parseFloat(getVal(i,'lat').replace(',','.')),parseFloat(getVal(i,'lon').replace(',','.'))]).filter(p=>!isNaN(p[0])&&!isNaN(p[1]));
+    if(pts.length===1)map.setView(pts[0],12);
+    else if(pts.length>1)map.fitBounds(pts,{padding:[40,40],maxZoom:10});
+  }else{map.setView([48.5,31.2],5);}
+  updateUrlParams();renderMap();
+}
+
+function selectRegion(val){
+  activeRegion=val;
+  document.querySelectorAll('#regionTags .tag-scroll-item').forEach(el=>el.classList.toggle('active',el.dataset.val===val));
+  if(val!=='all'){
+    const pts=rawData.filter(i=>getVal(i,'Region')===val).map(i=>[parseFloat(getVal(i,'lat').replace(',','.')),parseFloat(getVal(i,'lon').replace(',','.'))]).filter(p=>!isNaN(p[0])&&!isNaN(p[1]));
+    if(pts.length===1)map.setView(pts[0],13);
+    else if(pts.length>1)map.fitBounds(pts,{padding:[40,40],maxZoom:11});
+  }
+  updateUrlParams();renderMap();
+}
+
+function setSegment(which,val,btn){
+  const id=which==='photo'?'photoCtrl':'demontCtrl';
+  document.querySelectorAll('#'+id+' .seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(which==='photo')photoMode=val;else demontMode=val;
+  updateUrlParams();renderMap();
+}
+
+function buildSculptorList(){
+  const s=new Set();
+  rawData.forEach(i=>{const v=getVal(i,'sculptor');if(v&&!['Невідомий','невідомий','масове виробництво'].includes(v))s.add(v);});
+  const dl=document.getElementById('sculptorList');
+  [...s].sort().forEach(v=>{const o=document.createElement('option');o.value=v;dl.appendChild(o);});
+  document.getElementById('sculptorInput').addEventListener('input',()=>{
+    document.getElementById('sculptorClear').style.display=document.getElementById('sculptorInput').value?'block':'none';
     renderMap();
   });
-
-  // Sculptor datalist
-  const sculptors = new Set();
-  rawData.forEach(i => { const s=getVal(i,'sculptor'); if(s&&s!=='Невідомий'&&s!=='невідомий'&&s!=='масове виробництво') sculptors.add(s); });
-  const dl = document.getElementById('sculptorList');
-  [...sculptors].sort().forEach(s => { const opt=document.createElement('option'); opt.value=s; dl.appendChild(opt); });
-
-  // Year range slider
-  initYearSlider();
-
-  // Build legend
-  buildLegend();
-
-  // Load URL params
-  loadUrlParams();
-
-  // Stats
-  buildStats();
-
-  renderMap();
-
-  const id = new URLSearchParams(window.location.search).get('id');
-  if(id) openPage(id);
 }
+function clearSculptor(){document.getElementById('sculptorInput').value='';document.getElementById('sculptorClear').style.display='none';renderMap();}
 
-function initYearSlider() {
-  const minI = document.getElementById('yearMin');
-  const maxI = document.getElementById('yearMax');
-  const track = document.getElementById('rangeTrack');
-  const minL = document.getElementById('yearMinLbl');
-  const maxL = document.getElementById('yearMaxLbl');
-  const MIN=1860, MAX=2025;
-
-  function updateSlider() {
-    let lo = parseInt(minI.value), hi = parseInt(maxI.value);
-    if(lo > hi) { if(this===minI) lo=hi; else hi=lo; minI.value=lo; maxI.value=hi; }
-    yearMin=lo; yearMax=hi;
-    minL.textContent=lo; maxL.textContent=hi;
-    const pctLo=((lo-MIN)/(MAX-MIN))*100;
-    const pctHi=((hi-MIN)/(MAX-MIN))*100;
-    track.style.left=pctLo+'%'; track.style.right=(100-pctHi)+'%';
-    updateUrlParams(); renderMap();
+function initYearSlider(){
+  const minI=document.getElementById('yearMin'),maxI=document.getElementById('yearMax');
+  const track=document.getElementById('rangeTrack'),minL=document.getElementById('yearMinLbl'),maxL=document.getElementById('yearMaxLbl');
+  const MIN=1860,MAX=2025;
+  function upd(){
+    let lo=parseInt(minI.value),hi=parseInt(maxI.value);
+    if(lo>hi){if(this===minI)lo=hi;else hi=lo;minI.value=lo;maxI.value=hi;}
+    yearMin=lo;yearMax=hi;minL.textContent=lo;maxL.textContent=hi;
+    const plo=((lo-MIN)/(MAX-MIN))*100,phi=((hi-MIN)/(MAX-MIN))*100;
+    track.style.left=plo+'%';track.style.right=(100-phi)+'%';
+    updateUrlParams();renderMap();
   }
-  minI.addEventListener('input', updateSlider);
-  maxI.addEventListener('input', updateSlider);
-  updateSlider.call(minI);
+  minI.addEventListener('input',upd);maxI.addEventListener('input',upd);upd.call(minI);
 }
 
-function clearSculptor() {
-  document.getElementById('sculptorInput').value='';
-  document.getElementById('sculptorClear').style.display='none';
-  renderMap();
+function updateUrlParams(){
+  const p=new URLSearchParams();
+  const s=document.getElementById('search').value,sc=document.getElementById('sculptorInput').value;
+  if(s)p.set('q',s);
+  if(activeCountry!=='all')p.set('country',activeCountry);
+  if(activeRegion!=='all')p.set('region',activeRegion);
+  if(activeType!=='all')p.set('type',activeType);
+  if(activeView!=='all')p.set('view',activeView);
+  if(yearMin!==1860)p.set('ymin',yearMin);
+  if(yearMax!==2025)p.set('ymax',yearMax);
+  if(sc)p.set('sculptor',sc);
+  if(photoMode!=='all')p.set('photo',photoMode);
+  if(demontMode!=='hide')p.set('demont',demontMode);
+  const str=p.toString();
+  window.history.replaceState({},'',(str?'?'+str:window.location.pathname));
 }
 
-// ===== URL PARAMS =====
-function updateUrlParams() {
-  const params = new URLSearchParams();
-  const s = document.getElementById('search').value;
-  const fc = document.getElementById('fCountry').value;
-  const fr = document.getElementById('fRegion').value;
-  const sc = document.getElementById('sculptorInput').value;
-  if(s) params.set('q', s);
-  if(fc!=='all') params.set('country', fc);
-  if(fr!=='all') params.set('region', fr);
-  if(activeType!=='all') params.set('type', activeType);
-  if(activeView!=='all') params.set('view', activeView);
-  if(yearMin!==1860) params.set('ymin', yearMin);
-  if(yearMax!==2025) params.set('ymax', yearMax);
-  if(sc) params.set('sculptor', sc);
-  const str = params.toString();
-  window.history.replaceState({}, '', str ? '?'+str : window.location.pathname);
+function loadUrlParams(){
+  const p=new URLSearchParams(window.location.search);
+  if(p.get('q'))document.getElementById('search').value=p.get('q');
+  if(p.get('country')){activeCountry=p.get('country');selectCountry(activeCountry);}
+  if(p.get('region')){activeRegion=p.get('region');selectRegion(activeRegion);}
+  if(p.get('type'))activeType=p.get('type');
+  if(p.get('view'))activeView=p.get('view');
+  if(p.get('ymin')){document.getElementById('yearMin').value=p.get('ymin');yearMin=parseInt(p.get('ymin'));document.getElementById('yearMinLbl').textContent=yearMin;}
+  if(p.get('ymax')){document.getElementById('yearMax').value=p.get('ymax');yearMax=parseInt(p.get('ymax'));document.getElementById('yearMaxLbl').textContent=yearMax;}
+  if(p.get('sculptor')){document.getElementById('sculptorInput').value=p.get('sculptor');document.getElementById('sculptorClear').style.display='block';}
+  if(p.get('photo')){photoMode=p.get('photo');document.querySelectorAll('#photoCtrl .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.val===photoMode));}
+  if(p.get('demont')){demontMode=p.get('demont');document.querySelectorAll('#demontCtrl .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.val===demontMode));}
 }
 
-function loadUrlParams() {
-  const p = new URLSearchParams(window.location.search);
-  if(p.get('q')) document.getElementById('search').value = p.get('q');
-  if(p.get('country')) { document.getElementById('fCountry').value=p.get('country'); document.getElementById('fCountry').dispatchEvent(new Event('change')); }
-  if(p.get('region')) document.getElementById('fRegion').value=p.get('region');
-  if(p.get('type')) activeType = p.get('type');
-  if(p.get('view')) activeView = p.get('view');
-  if(p.get('ymin')) { document.getElementById('yearMin').value=p.get('ymin'); yearMin=parseInt(p.get('ymin')); document.getElementById('yearMinLbl').textContent=yearMin; }
-  if(p.get('ymax')) { document.getElementById('yearMax').value=p.get('ymax'); yearMax=parseInt(p.get('ymax')); document.getElementById('yearMaxLbl').textContent=yearMax; }
-  if(p.get('sculptor')) { document.getElementById('sculptorInput').value=p.get('sculptor'); document.getElementById('sculptorClear').style.display='block'; }
-}
-
-// ===== RENDER MAP =====
-function renderMap() {
+function renderMap(){
   markersCluster.clearLayers();
-  const s = document.getElementById('search').value.toLowerCase();
-  const fc = document.getElementById('fCountry').value;
-  const fr = document.getElementById('fRegion').value;
-  const sc = document.getElementById('sculptorInput').value.toLowerCase();
-  const onlyPhoto = document.getElementById('togglePhoto').checked;
-  const onlyWiki = document.getElementById('toggleWiki').checked;
-  const showDemont = document.getElementById('toggleDemont').checked;
-
-  const filtered = rawData.filter(item => {
-    const isDemolished = !!getVal(item, 'year_demont');
-    if(isDemolished && !showDemont) return false;
-    if(fc!=='all' && getVal(item,'Country')!==fc) return false;
-    if(fr!=='all' && getVal(item,'Region')!==fr) return false;
-    if(activeType!=='all' && getVal(item,'type')!==activeType) return false;
-    if(activeView!=='all') {
-      const views = getVal(item,'view').split(',').map(v=>v.trim());
-      if(!views.includes(activeView)) return false;
-    }
-    // Year filter
-    const yr = extractYear(getVal(item,'year_start'));
-    if(yr) { if(yr<yearMin||yr>yearMax) return false; }
-    // Sculptor
-    if(sc && !getVal(item,'sculptor').toLowerCase().includes(sc)) return false;
-    // Photo
-    if(onlyPhoto && !getVal(item,'Photo-GM') && !getVal(item,'other photo link')) return false;
-    // Wiki
-    if(onlyWiki && !getVal(item,'Wikipedia')) return false;
-    // Search (city, country, region, address, sculptor, description)
-    if(s) {
-      const pool = `${getVal(item,'City')} ${getVal(item,'Country')} ${getVal(item,'Region')} ${getVal(item,'Street')} ${getVal(item,'adr')} ${getVal(item,'sculptor')} ${getVal(item,'short description')}`.toLowerCase();
-      if(!pool.includes(s)) return false;
-    }
+  const s=document.getElementById('search').value.toLowerCase();
+  const sc=document.getElementById('sculptorInput').value.toLowerCase();
+  const onlyWiki=document.getElementById('toggleWiki').checked;
+  const filtered=rawData.filter(item=>{
+    const isDem=!!getVal(item,'year_demont');
+    if(demontMode==='hide'&&isDem)return false;
+    if(demontMode==='only'&&!isDem)return false;
+    if(activeCountry!=='all'&&getVal(item,'Country')!==activeCountry)return false;
+    if(activeRegion!=='all'&&getVal(item,'Region')!==activeRegion)return false;
+    if(activeType!=='all'&&getVal(item,'type')!==activeType)return false;
+    if(activeView!=='all'){const vs=getVal(item,'view').split(',').map(v=>v.trim());if(!vs.includes(activeView))return false;}
+    const yr=extractYear(getVal(item,'year_start'));
+    if(yr&&(yr<yearMin||yr>yearMax))return false;
+    if(sc&&!getVal(item,'sculptor').toLowerCase().includes(sc))return false;
+    const hasPhoto=!!(getVal(item,'Photo-GM')||getVal(item,'other photo link'));
+    if(photoMode==='with'&&!hasPhoto)return false;
+    if(photoMode==='without'&&hasPhoto)return false;
+    if(onlyWiki&&!getVal(item,'Wikipedia'))return false;
+    if(s){const pool=(getVal(item,'City')+' '+getVal(item,'Country')+' '+getVal(item,'Region')+' '+getVal(item,'Street')+' '+getVal(item,'adr')+' '+getVal(item,'sculptor')+' '+getVal(item,'short description')).toLowerCase();if(!pool.includes(s))return false;}
     return true;
   });
-
-  currentFiltered = filtered;
-
-  filtered.forEach(item => {
-    const lat = parseFloat(getVal(item,'lat').replace(',','.'));
-    const lon = parseFloat(getVal(item,'lon').replace(',','.'));
-    if(isNaN(lat)||isNaN(lon)) return;
-    const type = getVal(item,'type');
-    const isDemolished = !!getVal(item,'year_demont');
-    const conf = getTypeConf(type);
-    const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
-    let desc = getVal(item,'short description')||'';
-    if(desc.length>120) desc=desc.substring(0,120)+'...';
-    const demBadge = isDemolished ? `<div class="popup-demont-badge">⛔ ДЕМОНТОВАНО ${getVal(item,'year_demont')}</div>` : '';
-    const popupHtml = `
-      <div class="popup-card">
-        <div class="popup-photo-side">
-          <img src="${img||NO_PHOTO_SVG}" class="popup-photo" onerror="this.src='${NO_PHOTO_SVG}'">
-          <div class="popup-type-badge" style="background:${isDemolished?'#888':conf.color}">${type||"Об'єкт"}</div>
-          ${demBadge}
-        </div>
-        <div class="popup-info">
-          <h3 class="popup-title">${getVal(item,'City')}</h3>
-          <div class="popup-detail">📍 ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}</div>
-          <div class="popup-detail">📅 ${getVal(item,'year_start')||'Рік невідомий'}</div>
-          ${getVal(item,'sculptor') ? `<div class="popup-detail">🎨 ${getVal(item,'sculptor')}</div>` : ''}
-          <div class="popup-desc">${desc}</div>
-          <button class="more-btn" onclick="openPage('${getVal(item,'id')}')">ДЕТАЛЬНІШЕ →</button>
-        </div>
-      </div>`;
-    markersCluster.addLayer(L.marker([lat,lon], { icon: createIcon(type, isDemolished) }).bindPopup(popupHtml, { maxWidth:380 }));
+  currentFiltered=filtered;
+  filtered.forEach(item=>{
+    const lat=parseFloat(getVal(item,'lat').replace(',','.'));
+    const lon=parseFloat(getVal(item,'lon').replace(',','.'));
+    if(isNaN(lat)||isNaN(lon))return;
+    const type=getVal(item,'type'),isDem=!!getVal(item,'year_demont'),conf=getTypeConf(type);
+    const img=getVal(item,'Photo-GM')||getVal(item,'other photo link');
+    let desc=getVal(item,'short description')||'';if(desc.length>120)desc=desc.substring(0,120)+'...';
+    const demBadge=isDem?'<div class="popup-demont-badge">⛔ ДЕМОНТОВАНО '+getVal(item,'year_demont')+'</div>':'';
+    const pop='<div class="popup-card"><div class="popup-photo-side"><img src="'+(img||NO_PHOTO_SVG)+'" class="popup-photo" onerror="this.src=\''+NO_PHOTO_SVG+'\'"><div class="popup-type-badge" style="background:'+(isDem?'#888':conf.color)+'">'+(type||"Об'єкт")+'</div>'+demBadge+'</div><div class="popup-info"><h3 class="popup-title">'+getVal(item,'City')+'</h3><div class="popup-detail">📍 '+getVal(item,'Country')+(getVal(item,'Region')?', '+getVal(item,'Region'):'')+' </div><div class="popup-detail">📅 '+(getVal(item,'year_start')||'Рік невідомий')+'</div>'+(getVal(item,'sculptor')?'<div class="popup-detail">🎨 '+getVal(item,'sculptor')+'</div>':'')+'<div class="popup-desc">'+desc+'</div><button class="more-btn" onclick="openPage(\''+getVal(item,'id')+'\')">ДЕТАЛЬНІШЕ →</button></div></div>';
+    markersCluster.addLayer(L.marker([lat,lon],{icon:createIcon(type,isDem)}).bindPopup(pop,{maxWidth:400}));
   });
-
-  // Counter
-  document.getElementById('counter').innerHTML = `Показано: <span>${filtered.length}</span> / ${rawData.length} об'єктів`;
-
-  // Update tags
+  document.getElementById('counter').innerHTML='Показано: <span>'+filtered.length+'</span> / '+rawData.length+' об\'єктів';
   updateTags('type','typeTags',activeType);
   updateTags('view','viewTags',activeView);
-
-  // Update list
   renderList(filtered);
 }
 
-function updateTags(key, containerId, activeVal) {
-  const counts = {};
-  rawData.forEach(i => {
-    const raw = getVal(i, key);
-    if(!raw) return;
-    if(key==='view') { raw.split(',').forEach(p=>{const t=p.trim();if(t)counts[t]=(counts[t]||0)+1;}); }
-    else counts[raw]=(counts[raw]||0)+1;
-  });
-  const container = document.getElementById(containerId);
-  container.innerHTML='';
-  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val,cnt]) => {
-    const conf = key==='type' ? getTypeConf(val) : null;
-    const btn = document.createElement('div');
-    btn.className=`stat-tag${activeVal===val?' active':''}`;
-    const dotHtml = conf ? `<span class="dot" style="background:${conf.color}"></span>` : '';
-    btn.innerHTML=`${dotHtml}${val}<span class="cnt">${cnt}</span>`;
-    btn.onclick=()=>{
-      if(key==='type') activeType=(activeType===val?'all':val);
-      else activeView=(activeView===val?'all':val);
-      updateUrlParams(); renderMap();
-      if(window.innerWidth<=768) toggleSidebar();
-    };
+function updateTags(key,cId,av){
+  const counts={};
+  rawData.forEach(i=>{const raw=getVal(i,key);if(!raw)return;if(key==='view'){raw.split(',').forEach(p=>{const t=p.trim();if(t)counts[t]=(counts[t]||0)+1;});}else counts[raw]=(counts[raw]||0)+1;});
+  const container=document.getElementById(cId);container.innerHTML='';
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val,cnt])=>{
+    const conf=key==='type'?getTypeConf(val):null;
+    const btn=document.createElement('div');btn.className='stat-tag'+(av===val?' active':'');
+    btn.innerHTML=(conf?'<span class="dot" style="background:'+conf.color+'"></span>':'')+val+'<span class="cnt">'+cnt+'</span>';
+    btn.onclick=()=>{if(key==='type')activeType=(activeType===val?'all':val);else activeView=(activeView===val?'all':val);updateUrlParams();renderMap();if(window.innerWidth<=800)toggleSidebar();};
     container.appendChild(btn);
   });
 }
 
-// ===== LIST VIEW =====
-function renderList(items) {
-  const grid = document.getElementById('listGrid');
-  document.getElementById('listCount').textContent = `${items.length} об'єктів`;
+function renderList(items){
+  const grid=document.getElementById('listGrid');
+  document.getElementById('listCount').textContent=items.length+" об'єктів";
   grid.innerHTML='';
-  if(!items.length) {
-    grid.innerHTML='<div class="list-empty">😔 Нічого не знайдено.<br>Змініть фільтри.</div>';
-    return;
-  }
-  const MAX_LIST = 200;
-  items.slice(0,MAX_LIST).forEach(item => {
-    const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
-    const type = getVal(item,'type');
-    const conf = getTypeConf(type);
-    const isDemolished = !!getVal(item,'year_demont');
-    const card = document.createElement('div');
-    card.className='list-card';
-    card.innerHTML=`
-      <img class="list-card-img" src="${img||NO_PHOTO_SVG}" onerror="this.src='${NO_PHOTO_SVG}'" loading="lazy">
-      <div class="list-card-body">
-        <div class="list-card-city">${getVal(item,'City')||'—'}</div>
-        <div class="list-card-sub">📍 ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}</div>
-        <div class="list-card-sub">📅 ${getVal(item,'year_start')||'?'}</div>
-        <span class="list-card-type" style="background:${isDemolished?'#888':conf.color}">${isDemolished?'Демонтовано':type||'Об\'єкт'}</span>
-      </div>`;
-    card.onclick=()=>openPage(getVal(item,'id'));
-    grid.appendChild(card);
+  if(!items.length){grid.innerHTML='<div class="list-empty">😔 Нічого не знайдено.<br>Змініть фільтри.</div>';return;}
+  items.slice(0,200).forEach(item=>{
+    const img=getVal(item,'Photo-GM')||getVal(item,'other photo link');
+    const type=getVal(item,'type'),conf=getTypeConf(type),isDem=!!getVal(item,'year_demont');
+    const card=document.createElement('div');card.className='list-card';
+    card.innerHTML='<img class="list-card-img" src="'+(img||NO_PHOTO_SVG)+'" onerror="this.src=\''+NO_PHOTO_SVG+'\'" loading="lazy"><div class="list-card-body"><div class="list-card-city">'+(getVal(item,'City')||'—')+'</div><div class="list-card-sub">📍 '+getVal(item,'Country')+(getVal(item,'Region')?', '+getVal(item,'Region'):'')+' </div><div class="list-card-sub">📅 '+(getVal(item,'year_start')||'?')+'</div><span class="list-card-type" style="background:'+(isDem?'#888':conf.color)+'">'+(isDem?'Демонтовано':type||"Об'єкт")+'</span></div>';
+    card.onclick=()=>openPage(getVal(item,'id'));grid.appendChild(card);
   });
-  if(items.length>MAX_LIST) {
-    const note = document.createElement('div');
-    note.className='list-empty';
-    note.textContent=`... та ще ${items.length-MAX_LIST} об'єктів. Уточніть фільтри.`;
-    grid.appendChild(note);
-  }
+  if(items.length>200){const n=document.createElement('div');n.className='list-empty';n.textContent='... та ще '+(items.length-200)+' об\'єктів. Уточніть фільтри.';grid.appendChild(n);}
 }
 
-// ===== STATS =====
-function buildStats() {
-  const total = rawData.length;
-  const countries = new Set(rawData.map(i=>getVal(i,'Country'))).size;
-  const withPhoto = rawData.filter(i=>getVal(i,'Photo-GM')||getVal(i,'other photo link')).length;
-  const demont = rawData.filter(i=>getVal(i,'year_demont')).length;
-
-  document.getElementById('statsNumbers').innerHTML=`
-    <div class="stat-num-box"><div class="stat-num-val">${total}</div><div class="stat-num-label">Об'єктів</div></div>
-    <div class="stat-num-box"><div class="stat-num-val">${countries}</div><div class="stat-num-label">Країн</div></div>
-    <div class="stat-num-box"><div class="stat-num-val">${withPhoto}</div><div class="stat-num-label">З фото</div></div>
-    <div class="stat-num-box"><div class="stat-num-val">${demont}</div><div class="stat-num-label">Демонтовано</div></div>`;
-
-  // Countries
-  const cCounts={};
-  rawData.forEach(i=>{const c=getVal(i,'Country');if(c)cCounts[c]=(cCounts[c]||0)+1;});
-  const topC=Object.entries(cCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxC=topC[0][1];
-  document.getElementById('statsCountries').innerHTML=topC.map(([name,cnt])=>`
-    <div class="bar-row">
-      <div class="bar-name" title="${name}">${name}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(cnt/maxC)*100}%"></div></div>
-      <div class="bar-val">${cnt}</div>
-    </div>`).join('');
-
-  // Types
-  const tCounts={};
-  rawData.forEach(i=>{const t=getVal(i,'type');if(t)tCounts[t]=(tCounts[t]||0)+1;});
-  document.getElementById('statsTypes').innerHTML=Object.entries(tCounts).sort((a,b)=>b[1]-a[1]).map(([t,cnt])=>{
-    const conf=getTypeConf(t);
-    const pct=((cnt/total)*100).toFixed(1);
-    return `<div class="legend-item"><div class="legend-dot" style="background:${conf.color}"></div>${t} <span style="color:#b0b8cc">${cnt} (${pct}%)</span></div>`;
-  }).join('');
-
-  // Decades
-  const dCounts={};
-  rawData.forEach(i=>{
-    const y=extractYear(getVal(i,'year_start'));
-    if(y){ const d=Math.floor(y/10)*10; dCounts[d]=(dCounts[d]||0)+1; }
-  });
-  const decades=Object.keys(dCounts).map(Number).sort((a,b)=>a-b);
-  const maxD=Math.max(...Object.values(dCounts));
-  document.getElementById('statsDecades').innerHTML=decades.map(d=>{
-    const cnt=dCounts[d]; const h=Math.round((cnt/maxD)*68);
-    const isCurrent=(d>=2020);
-    return `<div class="decade-col">
-      <div class="${isCurrent?'decade-bar gold':'decade-bar'}" style="height:${h}px" title="${d}s: ${cnt}"></div>
-      <div class="decade-lbl">${d}s</div>
-    </div>`;
-  }).join('');
-
-  // Completeness
-  const fields=[
-    {label:'Фото',     fn:i=>!!(getVal(i,'Photo-GM')||getVal(i,'other photo link'))},
-    {label:'Скульптор',fn:i=>!!getVal(i,'sculptor')},
-    {label:'Матеріал', fn:i=>!!getVal(i,'material')},
-    {label:'Висота',   fn:i=>!!getVal(i,'height')},
-    {label:'Вікіпедія',fn:i=>!!getVal(i,'Wikipedia')},
-    {label:'Рік',      fn:i=>!!getVal(i,'year_start')},
-    {label:'Вулиця',   fn:i=>!!getVal(i,'Street')},
-  ];
-  const colors=['#0057b7','#27a465','#c8900a','#8e44ad','#16a085','#e04040','#d35400'];
-  document.getElementById('statsCompleteness').innerHTML=fields.map((f,idx)=>{
-    const cnt=rawData.filter(f.fn).length; const pct=Math.round((cnt/total)*100);
-    return `<div class="comp-row">
-      <div class="comp-name">${f.label}</div>
-      <div class="comp-track"><div class="comp-fill" style="width:${pct}%;background:${colors[idx]}"></div></div>
-      <div class="comp-pct">${pct}%</div>
-    </div>`;
-  }).join('');
+function buildStats(){
+  const total=rawData.length,countries=new Set(rawData.map(i=>getVal(i,'Country'))).size;
+  const withPhoto=rawData.filter(i=>getVal(i,'Photo-GM')||getVal(i,'other photo link')).length;
+  const demont=rawData.filter(i=>getVal(i,'year_demont')).length;
+  document.getElementById('statsNumbers').innerHTML='<div class="stat-num-box"><div class="stat-num-val">'+total+'</div><div class="stat-num-label">Об\'єктів</div></div><div class="stat-num-box"><div class="stat-num-val">'+countries+'</div><div class="stat-num-label">Країн</div></div><div class="stat-num-box"><div class="stat-num-val">'+withPhoto+'</div><div class="stat-num-label">З фото</div></div><div class="stat-num-box"><div class="stat-num-val">'+demont+'</div><div class="stat-num-label">Демонтовано</div></div>';
+  const cC={};rawData.forEach(i=>{const c=getVal(i,'Country');if(c)cC[c]=(cC[c]||0)+1;});
+  const topC=Object.entries(cC).sort((a,b)=>b[1]-a[1]).slice(0,10);const maxC=topC[0][1];
+  document.getElementById('statsCountries').innerHTML=topC.map(([n,c])=>'<div class="bar-row"><div class="bar-name" title="'+n+'">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+((c/maxC)*100)+'%"></div></div><div class="bar-val">'+c+'</div></div>').join('');
+  const tC={};rawData.forEach(i=>{const t=getVal(i,'type');if(t)tC[t]=(tC[t]||0)+1;});
+  document.getElementById('statsTypes').innerHTML=Object.entries(tC).sort((a,b)=>b[1]-a[1]).map(([t,c])=>{const conf=getTypeConf(t);return '<div class="legend-item"><div class="legend-dot" style="background:'+conf.color+'"></div>'+t+' <span style="color:#b0b8cc">'+c+' ('+((c/total)*100).toFixed(1)+'%)</span></div>';}).join('');
+  const dC={};rawData.forEach(i=>{const y=extractYear(getVal(i,'year_start'));if(y){const d=Math.floor(y/10)*10;dC[d]=(dC[d]||0)+1;}});
+  const decades=Object.keys(dC).map(Number).sort((a,b)=>a-b);const maxD=Math.max(...Object.values(dC));
+  document.getElementById('statsDecades').innerHTML=decades.map(d=>{const c=dC[d];const h=Math.round((c/maxD)*70);return '<div class="decade-col"><div class="'+(d>=2020?'decade-bar gold':'decade-bar')+'" style="height:'+h+'px" title="'+d+'s: '+c+'"></div><div class="decade-lbl">'+d+'s</div></div>';}).join('');
+  const fields=[{l:'Фото',fn:i=>!!(getVal(i,'Photo-GM')||getVal(i,'other photo link'))},{l:'Скульптор',fn:i=>!!getVal(i,'sculptor')},{l:'Матеріал',fn:i=>!!getVal(i,'material')},{l:'Висота',fn:i=>!!getVal(i,'height')},{l:'Вікіпедія',fn:i=>!!getVal(i,'Wikipedia')},{l:'Рік',fn:i=>!!getVal(i,'year_start')},{l:'Вулиця',fn:i=>!!getVal(i,'Street')}];
+  const cols=['#0057b7','#27a465','#c8900a','#8e44ad','#16a085','#e04040','#d35400'];
+  document.getElementById('statsCompleteness').innerHTML=fields.map((f,i)=>{const c=rawData.filter(f.fn).length;const pct=Math.round((c/total)*100);return '<div class="comp-row"><div class="comp-name">'+f.l+'</div><div class="comp-track"><div class="comp-fill" style="width:'+pct+'%;background:'+cols[i]+'"></div></div><div class="comp-pct">'+pct+'%</div></div>';}).join('');
 }
 
-// ===== RESET =====
-function resetFilters() {
+function resetFilters(){
   document.getElementById('search').value='';
-  document.getElementById('fCountry').value='all';
-  document.getElementById('fRegion').value='all';
-  document.getElementById('regionFilterGroup').style.display='none';
-  document.getElementById('sculptorInput').value='';
-  document.getElementById('sculptorClear').style.display='none';
-  document.getElementById('togglePhoto').checked=false;
+  document.getElementById('sculptorInput').value='';document.getElementById('sculptorClear').style.display='none';
   document.getElementById('toggleWiki').checked=false;
-  document.getElementById('toggleDemont').checked=false;
-  document.getElementById('yearMin').value=1860;
-  document.getElementById('yearMax').value=2025;
-  yearMin=1860; yearMax=2025;
-  document.getElementById('yearMinLbl').textContent='1860';
-  document.getElementById('yearMaxLbl').textContent='2025';
-  document.getElementById('rangeTrack').style.left='0%';
-  document.getElementById('rangeTrack').style.right='0%';
-  activeType='all'; activeView='all';
-  window.history.replaceState({}, '', window.location.pathname);
+  document.getElementById('yearMin').value=1860;document.getElementById('yearMax').value=2025;
+  yearMin=1860;yearMax=2025;document.getElementById('yearMinLbl').textContent='1860';document.getElementById('yearMaxLbl').textContent='2025';
+  document.getElementById('rangeTrack').style.left='0%';document.getElementById('rangeTrack').style.right='0%';
+  activeType='all';activeView='all';photoMode='all';demontMode='hide';
+  document.querySelectorAll('#photoCtrl .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('#demontCtrl .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  activeCountry='all';activeRegion='all';
+  document.querySelectorAll('#countryTags .tag-scroll-item').forEach(el=>el.classList.toggle('active',el.dataset.val==='all'));
+  document.querySelectorAll('#regionTags .tag-scroll-item').forEach(el=>el.classList.toggle('active',el.dataset.val==='all'));
+  document.getElementById('regionPanel').style.display='none';
+  map.setView([48.5,31.2],5);
+  window.history.replaceState({},'',window.location.pathname);
   renderMap();
-  if(window.innerWidth<=768) toggleSidebar();
+  if(window.innerWidth<=800)toggleSidebar();
 }
 
-// ===== GEOLOCATION =====
-function geolocate() {
+function geolocate(){
   const btn=document.getElementById('btnGeo');
-  if(!navigator.geolocation) { alert('Геолокація недоступна'); return; }
+  if(!navigator.geolocation){alert('Геолокація недоступна');return;}
   btn.style.background='#e8f0fb';
   navigator.geolocation.getCurrentPosition(pos=>{
-    btn.style.background='white';
-    const {latitude:lat, longitude:lng} = pos.coords;
-    map.setView([lat,lng], 10);
-    L.circleMarker([lat,lng],{radius:10,color:'#0057b7',fillColor:'#0057b7',fillOpacity:0.4,weight:3})
-      .addTo(map).bindPopup('📍 Ваше місцезнаходження').openPopup();
-  }, ()=>{ btn.style.background='white'; alert('Не вдалося визначити локацію'); });
+    btn.style.background='white';const {latitude:lat,longitude:lng}=pos.coords;
+    map.setView([lat,lng],10);
+    L.circleMarker([lat,lng],{radius:11,color:'#0057b7',fillColor:'#0057b7',fillOpacity:0.35,weight:3}).addTo(map).bindPopup('📍 Ваше місцезнаходження').openPopup();
+  },()=>{btn.style.background='white';alert('Не вдалося визначити локацію');});
 }
 
-// ===== RANDOM =====
-function openRandom() {
-  if(!currentFiltered.length) return;
-  const item = currentFiltered[Math.floor(Math.random()*currentFiltered.length)];
-  openPage(getVal(item,'id'));
+function openRandom(){
+  if(!currentFiltered.length)return;
+  const currentId=new URLSearchParams(window.location.search).get('id');
+  let pool=currentFiltered.filter(i=>getVal(i,'id')!==currentId);
+  if(!pool.length)pool=currentFiltered;
+  openPage(getVal(pool[Math.floor(Math.random()*pool.length)],'id'));
 }
 
-// ===== TABS =====
-function switchTab(name, btn) {
+function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
 }
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('active');}
 
-// ===== SIDEBAR =====
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('active');
-}
-
-// ===== OBJECT PAGE =====
-function calcCompleteness(item) {
+function calcCompleteness(item){
   const fields=['Photo-GM','sculptor','material','height','Wikipedia','year_start','Street','view','type'];
-  const filled=fields.filter(f=>!!getVal(item,f)).length;
-  return {filled, total:fields.length};
+  const filled=fields.filter(f=>!!getVal(item,f)).length;return{filled,total:fields.length};
 }
 
-function openPage(id) {
-  const item = rawData.find(i=>getVal(i,'id')===id);
-  if(!item) return;
-  window.history.pushState({}, '', `?id=${id}`);
-
-  const lat = getVal(item,'lat').replace(',','.');
-  const lon = getVal(item,'lon').replace(',','.');
-  const city = getVal(item,'City');
-  const type = getVal(item,'type') || "Пам'ятник";
-  const conf = getTypeConf(type);
-  const isDemolished = !!getVal(item,'year_demont');
-  const url = window.location.href;
-  const shareText = encodeURIComponent(`${city}. ${type}. Шевченко 360°`);
-  const directGmLink = getVal(item,'GM');
-  const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-
-  const cp = calcCompleteness(item);
-  const segs = Array.from({length:cp.total},(_,i)=>`<div class="comp-seg ${i<cp.filled?'filled':'empty'}"></div>`).join('');
-
+function openPage(id){
+  const item=rawData.find(i=>getVal(i,'id')===id);if(!item)return;
+  // find index in currentFiltered for nav
+  currentPageIndex=currentFiltered.findIndex(i=>getVal(i,'id')===id);
+  const navPos=document.getElementById('navPos');
+  const btnPrev=document.getElementById('btnPrev');
+  const btnNext=document.getElementById('btnNext');
+  if(currentPageIndex>=0&&currentFiltered.length>1){
+    navPos.textContent=`${currentPageIndex+1} / ${currentFiltered.length}`;
+    btnPrev.disabled=false;btnNext.disabled=false;
+  } else {
+    navPos.textContent='';
+    btnPrev.disabled=true;btnNext.disabled=true;
+  }
+  window.history.pushState({},'','?id='+id);
+  const lat=getVal(item,'lat').replace(',','.'),lon=getVal(item,'lon').replace(',','.');
+  const city=getVal(item,'City'),type=getVal(item,'type')||"Пам'ятник";
+  const conf=getTypeConf(type),isDem=!!getVal(item,'year_demont');
+  const url=window.location.href,shareText=encodeURIComponent(city+'. '+type+'. Шевченко 360°');
+  const gml=getVal(item,'GM'),routeUrl=gml?gml:'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lon;
+  const cp=calcCompleteness(item);
+  const segs=Array.from({length:cp.total},(_,i)=>'<div class="comp-seg '+(i<cp.filled?'filled':'empty')+'"></div>').join('');
   const extLinks=[
-    {n:'Google Maps',v:directGmLink,i:'🗺️'},
-    {n:'Street View',v:getVal(item,'StreetView'),i:'👀'},
-    {n:'Wikimapia',v:getVal(item,'wikimapia'),i:'🌍'},
-    {n:'Wikipedia',v:getVal(item,'Wikipedia'),i:'📚'},
+    {n:'Google Maps',v:gml,i:'🗺️'},{n:'Street View',v:getVal(item,'StreetView'),i:'👀'},
+    {n:'Wikimapia',v:getVal(item,'wikimapia'),i:'🌍'},{n:'Wikipedia',v:getVal(item,'Wikipedia'),i:'📚'},
     {n:'Kobzar.ua',v:getVal(item,'kobzar.ua'),i:'🇺🇦'},
-    {n:'OSM',v:getVal(item,'osm_id')?`https://www.openstreetmap.org/node/${getVal(item,'osm_id')}`:'',i:'🧭'},
+    {n:'OSM',v:getVal(item,'osm_id')?'https://www.openstreetmap.org/node/'+getVal(item,'osm_id'):'',i:'🧭'},
     {n:'Новини',v:getVal(item,'news link')||getVal(item,'news links'),i:'📰'},
-  ].filter(l=>l.v).map(l=>`<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
-
-  const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
-  const demoBanner = isDemolished ? `
-    <div class="demont-banner">⛔ Цей об'єкт було демонтовано${getVal(item,'year_demont')?' у '+getVal(item,'year_demont'):''}.</div>` : '';
-
-  const archRow = getVal(item,'arkhitector') ? `<tr><td>Архітектор</td><td>${getVal(item,'arkhitector')}</td></tr>` : '';
-  const heightRow = getVal(item,'height') ? `<tr><td>Висота</td><td>${getVal(item,'height')} м</td></tr>` : '';
-  const safeRow = getVal(item,'safe_no') ? `<tr><td>Охор. №</td><td>${getVal(item,'safe_no')}</td></tr>` : '';
-
-  document.getElementById('details').innerHTML=`
-    ${demoBanner}
-    <div class="grid-main">
-      <div>
-        <img src="${img||NO_PHOTO_SVG}" class="main-img-full" onerror="this.src='${NO_PHOTO_SVG}'">
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-          <span style="background:${isDemolished?'#888':conf.color};color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase">${type}</span>
-        </div>
-        <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;line-height:1.15;margin-bottom:6px">${city}</h1>
-        <p style="color:var(--blue);font-weight:700;font-size:14px;margin-bottom:20px">
-          ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}
-        </p>
-
-        <div class="comp-label">Повнота паспорту: ${cp.filled}/${cp.total} полів</div>
-        <div class="completeness-bar">${segs}</div>
-
-        <table class="passport-table">
-          <tr><td>Адреса</td><td>${getVal(item,'Street')||''} ${getVal(item,'adr')||'—'}</td></tr>
-          <tr><td>Вигляд</td><td>${getVal(item,'view')||'—'}</td></tr>
-          <tr><td>Скульптор</td><td>${getVal(item,'sculptor')||'—'}</td></tr>
-          ${archRow}
-          <tr><td>Рік</td><td>${getVal(item,'year_start')||'—'}${isDemolished?' → знесено '+getVal(item,'year_demont'):''}</td></tr>
-          <tr><td>Матеріал</td><td>${getVal(item,'material')||'—'}</td></tr>
-          ${heightRow}
-          ${safeRow}
-        </table>
-
-        <div class="section-title">Опис об'єкта</div>
-        <p style="line-height:1.7;color:#444;font-size:14px;margin-bottom:22px">${getVal(item,'short description')||'Опис відсутній.'}</p>
-
-        <div class="section-title">Карти та каталоги</div>
-        <div class="links-grid" style="margin-bottom:10px">${extLinks||'<span style="color:#b0b8cc;font-size:12px">Посилання відсутні</span>'}</div>
-
-        <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
-
-        <div class="share-row">
-          <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
-          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
-          <button onclick="navigator.clipboard.writeText('${url.replace(/'/g,"\\'")}');this.textContent='✓ Скопійовано!';setTimeout(()=>this.textContent='🔗 Копіювати',2000)" class="social-btn" style="background:#444">🔗 Копіювати</button>
-        </div>
-      </div>
-    </div>`;
+  ].filter(l=>l.v).map(l=>'<a href="'+l.v+'" target="_blank" class="ext-link-btn">'+l.i+' '+l.n+'</a>').join('');
+  const img=getVal(item,'Photo-GM')||getVal(item,'other photo link');
+  const demBanner=isDem?'<div class="demont-banner">⛔ Цей об\'єкт було демонтовано'+(getVal(item,'year_demont')?' у '+getVal(item,'year_demont'):'')+'.</div>':'';
+  const archRow=getVal(item,'arkhitector')?'<tr><td>Архітектор</td><td>'+getVal(item,'arkhitector')+'</td></tr>':'';
+  const heightRow=getVal(item,'height')?'<tr><td>Висота</td><td>'+getVal(item,'height')+' м</td></tr>':'';
+  const safeRow=getVal(item,'safe_no')?'<tr><td>Охор. №</td><td>'+getVal(item,'safe_no')+'</td></tr>':'';
+  const safeUrl=url.replace(/'/g,"\\'");
+  document.getElementById('details').innerHTML=demBanner+
+    '<div class="grid-main"><div><img src="'+(img||NO_PHOTO_SVG)+'" class="main-img-full" onerror="this.src=\''+NO_PHOTO_SVG+'\'"></div><div>'+
+    '<div style="margin-bottom:8px"><span style="background:'+(isDem?'#888':conf.color)+';color:white;padding:4px 14px;border-radius:20px;font-size:15px;font-weight:800;text-transform:uppercase">'+type+'</span></div>'+
+    '<h1 style="font-family:\'Playfair Display\',serif;font-size:36px;font-weight:900;line-height:1.15;margin-bottom:7px">'+city+'</h1>'+
+    '<p style="color:var(--blue);font-weight:700;font-size:20px;margin-bottom:22px">'+getVal(item,'Country')+(getVal(item,'Region')?', '+getVal(item,'Region'):'')+' </p>'+
+    '<div class="comp-label">Повнота паспорту: '+cp.filled+'/'+cp.total+' полів</div>'+
+    '<div class="completeness-bar">'+segs+'</div>'+
+    '<table class="passport-table">'+
+    '<tr><td>Адреса</td><td>'+(getVal(item,'Street')||'')+' '+(getVal(item,'adr')||'—')+'</td></tr>'+
+    '<tr><td>Вигляд</td><td>'+(getVal(item,'view')||'—')+'</td></tr>'+
+    '<tr><td>Скульптор</td><td>'+(getVal(item,'sculptor')||'—')+'</td></tr>'+
+    archRow+'<tr><td>Рік</td><td>'+(getVal(item,'year_start')||'—')+(isDem?' → знесено '+getVal(item,'year_demont'):'')+' </td></tr>'+
+    '<tr><td>Матеріал</td><td>'+(getVal(item,'material')||'—')+'</td></tr>'+heightRow+safeRow+'</table>'+
+    '<div class="section-title">Опис об\'єкта</div>'+
+    '<p style="line-height:1.7;color:#444;font-size:20px;margin-bottom:24px">'+(getVal(item,'short description')||'Опис відсутній.')+'</p>'+
+    '<div class="section-title">Карти та каталоги</div>'+
+    '<div class="links-grid" style="margin-bottom:12px">'+(extLinks||'<span style="color:#b0b8cc;font-size:15px">Посилання відсутні</span>')+'</div>'+
+    '<a href="'+routeUrl+'" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>'+
+    '<div class="share-row">'+
+    '<a href="https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+shareText+'" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>'+
+    '<a href="https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(url)+'" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>'+
+    '<button onclick="navigator.clipboard.writeText(\''+safeUrl+'\');this.textContent=\'✓ Скопійовано!\';setTimeout(()=>this.textContent=\'🔗 Копіювати\',2000)" class="social-btn" style="background:#444">🔗 Копіювати</button>'+
+    '</div></div></div>';
   document.getElementById('object-page').style.display='block';
   document.getElementById('object-page').scrollTop=0;
 }
 
-function closePage() {
-  window.history.pushState({}, '', window.location.pathname);
-  document.getElementById('object-page').style.display='none';
+function closePage(){window.history.pushState({},'',window.location.pathname);document.getElementById('object-page').style.display='none';}
+window.addEventListener('popstate',()=>{const id=new URLSearchParams(window.location.search).get('id');if(id)openPage(id);else document.getElementById('object-page').style.display='none';});
+
+// ===== PREV/NEXT NAVIGATION =====
+let currentPageIndex = -1;
+function navObject(dir) {
+  if(!currentFiltered.length) return;
+  let idx = currentPageIndex + dir;
+  if(idx < 0) idx = currentFiltered.length - 1;
+  if(idx >= currentFiltered.length) idx = 0;
+  openPage(getVal(currentFiltered[idx],'id'));
 }
 
-window.addEventListener('popstate', () => {
-  const id = new URLSearchParams(window.location.search).get('id');
-  if(id) openPage(id);
-  else document.getElementById('object-page').style.display='none';
-});
+// ===== GAME ENGINE =====
+let gameMap=null, gameGuessMarker=null, gameActualMarker=null, gameLine=null;
+let gameRound=0, gameTotalScore=0, gameItems=[], gameGuessLatLng=null, gameRoundResults=[];
+const GAME_ROUNDS=5;
+
+function getStars(pts){
+  if(pts>=4500)return'⭐⭐⭐⭐⭐';
+  if(pts>=3500)return'⭐⭐⭐⭐';
+  if(pts>=2500)return'⭐⭐⭐';
+  if(pts>=1500)return'⭐⭐';
+  return'⭐';
+}
+function getRank(total){
+  const p=total/25000;
+  if(p>=0.95)return'🏆 Абсолютний знавець Шевченкіани!';
+  if(p>=0.80)return'🥇 Відмінний результат! Справжній знавець!';
+  if(p>=0.60)return'🥈 Добре! Непоганий географ.';
+  if(p>=0.40)return'🥉 Є куди рости — продовжуй грати!';
+  return'📍 Тільки починаєш знайомитись із картою.';
+}
+function distKm(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function calcPts(km){
+  if(km<1)return 5000;
+  if(km<5)return Math.round(5000-km*100);
+  if(km<100)return Math.round(4500-km*20);
+  if(km<1000)return Math.max(0,Math.round(2500-km*2));
+  return Math.max(0,Math.round(500-(km-1000)*0.25));
+}
+
+function startGame(){
+  // pick 5 random items WITH photo
+  const pool=rawData.filter(i=>(getVal(i,'Photo-GM')||getVal(i,'other photo link'))&&getVal(i,'lat')&&getVal(i,'lon'));
+  if(pool.length<5){alert('Недостатньо об\'єктів з фото для гри');return;}
+  gameItems=[];
+  const used=new Set();
+  while(gameItems.length<GAME_ROUNDS){
+    const r=pool[Math.floor(Math.random()*pool.length)];
+    const id=getVal(r,'id');
+    if(!used.has(id)){used.add(id);gameItems.push(r);}
+  }
+  gameRound=0;gameTotalScore=0;gameRoundResults=[];
+  document.getElementById('gameFinal').classList.remove('active');
+  document.getElementById('game-overlay').classList.add('active');
+  // init game map once
+  if(!gameMap){
+    gameMap=L.map('game-map',{zoomControl:false}).setView([48.5,31.2],2);
+    L.control.zoom({position:'bottomright'}).addTo(gameMap);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© CARTO'}).addTo(gameMap);
+    gameMap.on('click',onGameMapClick);
+  } else {
+    gameMap.setView([48.5,31.2],2);
+  }
+  loadGameRound();
+}
+
+function loadGameRound(){
+  const item=gameItems[gameRound];
+  gameGuessLatLng=null;
+  if(gameGuessMarker){gameMap.removeLayer(gameGuessMarker);gameGuessMarker=null;}
+  if(gameActualMarker){gameMap.removeLayer(gameActualMarker);gameActualMarker=null;}
+  if(gameLine){gameMap.removeLayer(gameLine);gameLine=null;}
+  document.getElementById('gameResult').style.display='none';
+  document.getElementById('gameMapPrompt').style.display='block';
+  const guessBtn=document.getElementById('gameGuessBtn');
+  guessBtn.disabled=true;guessBtn.textContent='Підтвердити відповідь';
+  document.getElementById('gameRoundLbl').textContent=`Раунд ${gameRound+1} / ${GAME_ROUNDS}`;
+  document.getElementById('gameTotalPts').textContent=`${gameTotalScore} балів`;
+  // photo
+  const img=getVal(item,'Photo-GM')||getVal(item,'other photo link');
+  document.getElementById('gamePhoto').src=img||NO_PHOTO_SVG;
+  // clues - type, decade, view (no country/city!)
+  const yr=extractYear(getVal(item,'year_start'));
+  const decade=yr?`${Math.floor(yr/10)*10}-ті рр.`:'';
+  const clues=[getVal(item,'type'),decade,getVal(item,'view').split(',')[0].trim()].filter(Boolean);
+  document.getElementById('gameClues').innerHTML=clues.map(c=>`<div class="game-clue">${c}</div>`).join('');
+  gameMap.setView([48.5,31.2],2);
+}
+
+function onGameMapClick(e){
+  if(document.getElementById('gameResult').style.display==='flex') return;
+  gameGuessLatLng=e.latlng;
+  if(gameGuessMarker) gameMap.removeLayer(gameGuessMarker);
+  gameGuessMarker=L.marker(e.latlng,{icon:L.divIcon({html:'<div style="width:20px;height:20px;background:#ffd700;border-radius:50%;border:3px solid #c8900a;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',className:'',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(gameMap);
+  document.getElementById('gameGuessBtn').disabled=false;
+  document.getElementById('gameMapPrompt').style.display='none';
+}
+
+function confirmGuess(){
+  if(!gameGuessLatLng) return;
+  const item=gameItems[gameRound];
+  const aLat=parseFloat(getVal(item,'lat').replace(',','.'));
+  const aLon=parseFloat(getVal(item,'lon').replace(',','.'));
+  const km=distKm(gameGuessLatLng.lat,gameGuessLatLng.lng,aLat,aLon);
+  const pts=calcPts(km);
+  gameTotalScore+=pts;
+  gameRoundResults.push({city:getVal(item,'City'),km:Math.round(km),pts});
+
+  // Show actual marker
+  gameActualMarker=L.marker([aLat,aLon],{icon:L.divIcon({html:'<div style="width:22px;height:22px;background:#0057b7;border-radius:50%;border:3px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.4)"></div>',className:'',iconSize:[22,22],iconAnchor:[11,11]})}).bindPopup(`📍 ${getVal(item,'City')}, ${getVal(item,'Country')}`).addTo(gameMap).openPopup();
+  gameLine=L.polyline([[gameGuessLatLng.lat,gameGuessLatLng.lng],[aLat,aLon]],{color:'#ffd700',weight:2,dashArray:'6,4',opacity:0.8}).addTo(gameMap);
+  gameMap.fitBounds([[gameGuessLatLng.lat,gameGuessLatLng.lng],[aLat,aLon]],{padding:[40,40],maxZoom:10});
+
+  // result panel
+  document.getElementById('resDist').textContent=km<1?'< 1':Math.round(km);
+  document.getElementById('resPts').textContent=`+${pts}`;
+  document.getElementById('gameTotalPts').textContent=`${gameTotalScore} балів`;
+  document.getElementById('resStars').textContent=getStars(pts);
+  document.getElementById('resPlace').innerHTML=`<b>${getVal(item,'City')}</b>, ${getVal(item,'Country')}${getVal(item,'Region')?'<br>'+getVal(item,'Region'):''}`;
+  const res=document.getElementById('gameResult');
+  res.style.display='flex';
+  const nb=document.querySelector('#gameResult .result-btns .result-btn.primary');
+  nb.textContent=gameRound+1>=GAME_ROUNDS?'Переглянути результати ›':'Наступний раунд ›';
+  document.getElementById('gameGuessBtn').disabled=true;
+}
+
+function nextRound(){
+  gameRound++;
+  if(gameRound>=GAME_ROUNDS){showFinal();}
+  else{loadGameRound();}
+}
+
+function showFinal(){
+  document.getElementById('game-overlay').classList.remove('active');
+  const fin=document.getElementById('gameFinal');
+  fin.classList.add('active');
+  document.getElementById('finalTotal').textContent=gameTotalScore;
+  document.getElementById('finalSubtitle').textContent=getRank(gameTotalScore);
+  document.getElementById('finalRounds').innerHTML=gameRoundResults.map((r,i)=>
+    `<div class="final-round-row">
+      <span>Раунд ${i+1}: <b>${r.city}</b></span>
+      <span class="rdist">${r.km} км</span>
+      <span class="rpts">+${r.pts}</span>
+    </div>`).join('');
+}
+
+function openCurrentOnMap(){
+  const item=gameItems[gameRound];
+  closeGame();
+  openPage(getVal(item,'id'));
+}
+
+function closeGame(){
+  document.getElementById('game-overlay').classList.remove('active');
+  document.getElementById('gameFinal').classList.remove('active');
+  if(gameMap) gameMap.invalidateSize();
+}
+
 </script>
 </body>
 </html>
