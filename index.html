@@ -1,182 +1,491 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шевченко 360° | Світовий реєстр</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Шевченко 360° | Світовий реєстр</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Шевченко 360° | Світова карта об'єктів">
+<meta property="og:description" content="Інтерактивний реєстр пам'ятників Кобзарю по всьому світу.">
+<meta property="og:url" content="https://terheritage-sys.github.io/">
+<meta property="og:image" content="https://terheritage-sys.github.io/logo_preview.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"/>
 
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Шевченко 360° | Світова карта об'єктів">
-    <meta property="og:description" content="Інтерактивний реєстр пам'ятників Кобзарю по всьому світу.">
-    <meta property="og:url" content="https://terheritage-sys.github.io/">
-    <meta property="og:image" content="https://terheritage-sys.github.io/logo_preview.jpg">
+<style>
+:root {
+  --blue: #0057b7; --gold: #ffd700; --gold-dark: #c8900a;
+  --bg: #f2f4f8; --text: #2a2d35; --muted: #7a8090;
+  --sidebar-w: 360px;
+  --radius: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; display: flex; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); }
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    
-    <style>
-        :root { --blue: #0057b7; --gold: #ffd700; --bg: #f4f7f6; --text: #333; }
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); }
-        
-        /* SIDEBAR */
-        #sidebar { width: 360px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2000; box-shadow: 2px 0 15px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
-        .header { padding: 15px 20px; background: var(--blue); color: white; display: flex; justify-content: space-between; align-items: center; }
-        
-        .reset-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-weight: bold; }
-        
-        .close-sidebar-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 10px; }
+/* ========== SIDEBAR ========== */
+#sidebar {
+  width: var(--sidebar-w); background: #fff; border-right: 1px solid #e8eaf0;
+  display: flex; flex-direction: column; z-index: 2000;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.08); transition: transform 0.3s ease;
+}
+.sidebar-header {
+  padding: 16px 20px 0; background: var(--blue); color: white; flex-shrink: 0;
+}
+.sidebar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.sidebar-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; letter-spacing: 0.3px; }
+.sidebar-title span { color: var(--gold); }
+.btn-reset { background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 5px 11px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 700; font-family: 'Nunito', sans-serif; letter-spacing: 0.5px; transition: background 0.2s; }
+.btn-reset:hover { background: rgba(255,255,255,0.3); }
+.close-btn { display: none; background: none; border: none; color: white; font-size: 26px; cursor: pointer; line-height: 1; padding: 0 5px; }
 
-        .filters { padding: 15px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
-        .filter-group { margin-bottom: 20px; }
-        label { display: block; font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
-        select, input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
-        
-        /* Стилі для списку чекбоксів (Роки) */
-        .checkbox-list {
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: #fff;
-            padding: 5px;
-        }
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            padding: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .checkbox-item:last-child { border-bottom: none; }
-        .checkbox-item:hover { background: #f9f9f9; }
-        .checkbox-item input { margin-right: 10px; cursor: pointer; }
-        .checkbox-item span { flex: 1; }
-        .checkbox-item .count-badge { font-size: 10px; color: #999; background: #eee; padding: 2px 6px; border-radius: 10px; }
+/* Tabs */
+.tabs { display: flex; border-bottom: none; margin: 0 -20px; }
+.tab-btn {
+  flex: 1; padding: 10px 5px; background: rgba(0,0,0,0.15); color: rgba(255,255,255,0.75);
+  border: none; cursor: pointer; font-size: 12px; font-weight: 700; font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.3px; transition: all 0.2s; border-top: 2px solid transparent;
+}
+.tab-btn.active { background: #fff; color: var(--blue); border-top: 2px solid var(--gold); }
 
-        #regionFilterGroup { display: none; background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px dashed var(--blue); margin-bottom: 20px; }
+/* Tab panels */
+.tab-panel { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tab-panel.active { display: flex; flex-direction: column; }
 
-        .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
-        .stat-tag { background: #eee; padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; align-items: center; user-select: none; }
-        .stat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
-        .stat-tag .count { margin-left: 6px; opacity: 0.7; font-size: 10px; font-weight: bold; }
-        .stat-tag.active .count { opacity: 1; color: var(--gold); }
+/* FILTERS panel */
+#tab-filters { padding: 14px 16px; gap: 14px; }
+.filter-section { background: #f8f9fc; border-radius: var(--radius); padding: 12px 14px; border: 1px solid #ebeef5; }
+.filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 9px; display: flex; align-items: center; gap: 5px; }
+.filter-label .badge { background: var(--blue); color: white; border-radius: 10px; padding: 1px 6px; font-size: 9px; }
+input[type="text"], select {
+  width: 100%; padding: 9px 12px; border: 1.5px solid #e0e3eb; border-radius: 8px;
+  font-size: 13px; font-family: 'Nunito', sans-serif; outline: none; background: #fff;
+  transition: border-color 0.2s;
+}
+input[type="text"]:focus, select:focus { border-color: var(--blue); }
 
-        /* MAP & UI */
-        #map-container { flex: 1; position: relative; height: 100%; }
-        #map { width: 100%; height: 100%; }
+.tag-container { display: flex; flex-wrap: wrap; gap: 5px; }
+.stat-tag {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 20px; font-size: 11px; cursor: pointer;
+  transition: all 0.15s; border: 1.5px solid #e0e3eb; background: #fff;
+  font-weight: 700; user-select: none;
+}
+.stat-tag:hover { border-color: var(--blue); color: var(--blue); }
+.stat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
+.stat-tag .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stat-tag .cnt { opacity: 0.65; font-size: 10px; }
+.stat-tag.active .cnt { opacity: 1; color: var(--gold); }
 
-        .mobile-menu-btn { 
-            display: none; position: absolute; top: 20px; left: 20px; z-index: 1000;
-            background: var(--blue); color: white; border: none; 
-            padding: 12px 15px; border-radius: 50px; font-weight: bold; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;
-            align-items: center; gap: 8px; font-size: 14px;
-        }
+/* Range slider */
+.range-wrap { position: relative; padding: 6px 0 20px; }
+.range-track-bg { position: absolute; top: 14px; left: 0; right: 0; height: 4px; background: #e0e3eb; border-radius: 2px; }
+.range-track-fill { position: absolute; top: 14px; height: 4px; background: var(--blue); border-radius: 2px; }
+.range-wrap input[type=range] {
+  position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 0;
+  -webkit-appearance: none; appearance: none; background: transparent;
+  border: none; height: 28px; pointer-events: none; outline: none;
+}
+.range-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; pointer-events: all;
+  width: 18px; height: 18px; background: var(--blue); border-radius: 50%;
+  border: 2px solid white; box-shadow: 0 2px 6px rgba(0,87,183,0.4); cursor: pointer;
+}
+.range-wrap input[type=range]::-moz-range-thumb {
+  pointer-events: all; width: 18px; height: 18px; background: var(--blue);
+  border-radius: 50%; border: 2px solid white; cursor: pointer;
+}
+.range-labels { display: flex; justify-content: space-between; position: absolute; bottom: 0; left: 0; right: 0; }
+.range-labels span { font-size: 11px; font-weight: 800; color: var(--blue); }
 
-        /* POPUP */
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
-        .leaflet-popup-content { margin: 0 !important; width: 380px !important; }
-        .popup-card { display: flex; height: 220px; }
-        .popup-info { flex: 1; padding: 15px; overflow: hidden; display: flex; flex-direction: column; }
-        .popup-photo-side { width: 130px; background: #222; flex-shrink: 0; }
-        .popup-photo { width: 100%; height: 100%; object-fit: cover; }
-        .popup-title { margin: 0 0 5px; font-size: 16px; color: #222; font-weight: 800; line-height: 1.2; }
-        .popup-tag { display: inline-block; background: var(--gold); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; align-self: flex-start; }
-        .popup-detail { font-size: 11px; color: #666; margin-bottom: 2px; }
-        .popup-desc { font-size: 11px; color: #555; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px; line-height: 1.3; flex-grow: 1; overflow: hidden; }
-        .more-btn { background: var(--blue); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; margin-top: 10px; font-size: 11px; font-weight: bold; width: 100%; }
+/* Toggle switches */
+.toggle-row { display: flex; justify-content: space-between; align-items: center; }
+.toggle-label { font-size: 12px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.toggle { position: relative; width: 38px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider-toggle { position: absolute; cursor: pointer; inset: 0; background: #d0d5e8; border-radius: 20px; transition: 0.3s; }
+.slider-toggle:before { position: absolute; content: ""; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+.toggle input:checked + .slider-toggle { background: var(--blue); }
+.toggle input:checked + .slider-toggle:before { transform: translateX(18px); }
 
-        /* OBJECT PAGE */
-        #object-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3000; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .page-content { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
-        .grid-main { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; }
-        .main-img-full { width: 100%; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        .passport-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-        .passport-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .passport-table td:first-child { font-weight: bold; color: #888; width: 35%; text-transform: uppercase; font-size: 10px; }
-        .section-title { font-size: 11px; color: #999; text-transform: uppercase; font-weight: bold; margin: 25px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .links-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .ext-link-btn { text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; background: #f8f9fa; color: #333; font-weight: 600; border: 1px solid #ddd; display: flex; align-items: center; gap:5px; }
-        .route-btn { display: block; background: #28a745; color: white; text-align: center; padding: 18px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 20px 0; }
-        .share-row { display: flex; gap: 10px; margin-top: 15px; }
-        .social-btn { flex: 1; border: none; padding: 12px; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; font-size: 12px; text-decoration: none; text-align: center; }
-        #counter { padding: 12px; background: #f0f0f0; text-align: center; font-size: 12px; font-weight: bold; border-top: 1px solid #ddd; }
+/* Region group */
+#regionFilterGroup { background: #f0f7ff; border-radius: 8px; border: 1px dashed var(--blue); padding: 10px; margin-top: 8px; display: none; }
 
-        @media (max-width: 768px) {
-            #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 85%; max-width: 320px; transform: translateX(-100%); }
-            #sidebar.open { transform: translateX(0); }
-            .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; }
-            .overlay.active { display: block; }
-            .mobile-menu-btn { display: flex; }
-            .close-sidebar-btn { display: block; }
-            .leaflet-popup-content { width: 300px !important; }
-            .popup-card { height: auto; min-height: 180px; }
-            .popup-photo-side { width: 100px; }
-            .popup-info { padding: 12px; }
-            .popup-title { font-size: 14px; }
-            .popup-desc { display: none; }
-            .grid-main { grid-template-columns: 1fr; gap: 20px; }
-            .page-content { padding: 20px 15px; }
-        }
-    </style>
+/* LIST tab */
+#tab-list { padding: 12px; gap: 8px; }
+.list-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 4px; flex-shrink: 0; }
+.list-count { font-size: 11px; color: var(--muted); font-weight: 700; }
+.list-grid { display: flex; flex-direction: column; gap: 7px; padding-bottom: 10px; }
+.list-card {
+  display: flex; gap: 10px; background: #fff; border-radius: var(--radius);
+  border: 1px solid #ebeef5; padding: 10px; cursor: pointer;
+  transition: all 0.15s; align-items: center;
+}
+.list-card:hover { border-color: var(--blue); box-shadow: 0 3px 12px rgba(0,87,183,0.1); transform: translateY(-1px); }
+.list-card-img { width: 54px; height: 54px; border-radius: 7px; object-fit: cover; flex-shrink: 0; background: #ebeef5; }
+.list-card-body { flex: 1; min-width: 0; }
+.list-card-city { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.list-card-type { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; color: white; margin-top: 4px; }
+.list-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 20px; }
+
+/* STATS tab */
+#tab-stats { padding: 14px 16px; gap: 14px; }
+.stat-card { background: #f8f9fc; border: 1px solid #ebeef5; border-radius: var(--radius); padding: 14px; }
+.stat-card-title { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; margin-bottom: 12px; }
+.stat-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-num-box { background: white; border-radius: 8px; padding: 10px; text-align: center; border: 1px solid #ebeef5; }
+.stat-num-val { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--blue); }
+.stat-num-label { font-size: 10px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+.bar-chart { display: flex; flex-direction: column; gap: 5px; }
+.bar-row { display: flex; align-items: center; gap: 7px; font-size: 11px; }
+.bar-name { width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.bar-track { flex: 1; background: #e8eaf0; border-radius: 3px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width 0.5s; }
+.bar-val { width: 28px; text-align: right; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+.decade-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; padding-bottom: 18px; position: relative; }
+.decade-col { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+.decade-bar { width: 100%; background: var(--blue); border-radius: 3px 3px 0 0; transition: height 0.5s; min-height: 2px; }
+.decade-bar.gold { background: var(--gold-dark); }
+.decade-lbl { position: absolute; bottom: -16px; font-size: 8px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.donut-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.completeness-bars { display: flex; flex-direction: column; gap: 6px; }
+.comp-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.comp-name { width: 90px; flex-shrink: 0; font-weight: 600; }
+.comp-track { flex: 1; background: #e8eaf0; border-radius: 3px; height: 8px; overflow: hidden; }
+.comp-fill { height: 100%; border-radius: 3px; }
+.comp-pct { width: 32px; text-align: right; font-weight: 800; font-size: 10px; color: var(--muted); flex-shrink: 0; }
+
+/* COUNTER */
+#counter {
+  padding: 10px 16px; text-align: center; font-size: 11px; font-weight: 800;
+  color: var(--muted); border-top: 1px solid #ebeef5; letter-spacing: 0.3px; flex-shrink: 0;
+}
+#counter span { color: var(--blue); font-size: 14px; }
+
+/* MAP */
+#map-container { flex: 1; position: relative; height: 100%; }
+#map { width: 100%; height: 100%; }
+
+/* Map buttons */
+.map-fab {
+  position: absolute; z-index: 900; display: flex; flex-direction: column; gap: 8px;
+  right: 60px; bottom: 30px;
+}
+.map-btn {
+  background: white; border: none; border-radius: 50%; width: 42px; height: 42px;
+  box-shadow: var(--shadow); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  position: relative;
+}
+.map-btn:hover { transform: scale(1.08); box-shadow: 0 6px 25px rgba(0,0,0,0.18); }
+.map-btn.active { background: var(--blue); }
+.map-btn-tooltip {
+  position: absolute; right: 50px; background: #2a2d35; color: white;
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+}
+.map-btn:hover .map-btn-tooltip { opacity: 1; }
+
+.mobile-menu-btn {
+  display: none; position: absolute; top: 16px; left: 16px; z-index: 1000;
+  background: var(--blue); color: white; border: none;
+  padding: 11px 16px; border-radius: 50px; font-weight: 800;
+  box-shadow: var(--shadow); cursor: pointer; align-items: center; gap: 7px; font-size: 13px;
+  font-family: 'Nunito', sans-serif;
+}
+
+/* Legend on map */
+#map-legend {
+  position: absolute; bottom: 30px; left: 20px; z-index: 900;
+  background: white; border-radius: var(--radius); padding: 10px 12px;
+  box-shadow: var(--shadow); font-size: 10px; font-weight: 700;
+  display: flex; flex-direction: column; gap: 5px; max-width: 160px;
+}
+.leg-item { display: flex; align-items: center; gap: 7px; }
+.leg-marker { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.1); }
+.leg-marker.square { border-radius: 3px; }
+.leg-marker.diamond { border-radius: 0; transform: rotate(45deg); }
+.leg-marker.demont { opacity: 0.45; position: relative; }
+
+/* POPUP */
+.leaflet-popup-content-wrapper { border-radius: 14px !important; padding: 0 !important; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; }
+.leaflet-popup-content { margin: 0 !important; width: 360px !important; }
+.popup-card { display: flex; min-height: 190px; }
+.popup-photo-side { width: 120px; background: #e8eaf0; flex-shrink: 0; position: relative; overflow: hidden; }
+.popup-photo { width: 100%; height: 100%; object-fit: cover; }
+.popup-type-badge {
+  position: absolute; top: 8px; left: 8px;
+  font-size: 8px; font-weight: 800; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 10px; color: white; letter-spacing: 0.5px;
+}
+.popup-demont-badge {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.65); color: #fff; font-size: 9px; font-weight: 800;
+  text-align: center; padding: 4px; letter-spacing: 0.3px;
+}
+.popup-info { flex: 1; padding: 14px; display: flex; flex-direction: column; overflow: hidden; }
+.popup-title { font-family: 'Playfair Display', serif; font-size: 15px; color: #1a1c22; font-weight: 900; margin-bottom: 5px; line-height: 1.2; }
+.popup-detail { font-size: 11px; color: var(--muted); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+.popup-desc { font-size: 11px; color: #555; margin-top: 7px; border-top: 1px solid #f0f0f5; padding-top: 7px; line-height: 1.4; flex-grow: 1; overflow: hidden; }
+.more-btn {
+  background: var(--blue); color: white; border: none; padding: 8px;
+  border-radius: 8px; cursor: pointer; margin-top: 10px; font-size: 11px; font-weight: 800;
+  width: 100%; font-family: 'Nunito', sans-serif; letter-spacing: 0.3px; transition: background 0.2s;
+}
+.more-btn:hover { background: #0049a0; }
+
+/* OBJECT PAGE */
+#object-page {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white;
+  z-index: 3000; display: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.page-content { max-width: 1060px; margin: 0 auto; padding: 36px 24px; }
+.page-back {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px;
+  border: 1.5px solid #e0e3eb; background: white; border-radius: 8px;
+  cursor: pointer; font-weight: 700; font-size: 13px; font-family: 'Nunito', sans-serif;
+  margin-bottom: 24px; transition: all 0.2s; color: var(--text);
+}
+.page-back:hover { border-color: var(--blue); color: var(--blue); }
+.grid-main { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; }
+.main-img-full { width: 100%; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); aspect-ratio: 4/3; object-fit: cover; }
+.passport-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+.passport-table td { padding: 9px 8px; border-bottom: 1px solid #f0f2f8; font-size: 13px; vertical-align: top; }
+.passport-table td:first-child { font-weight: 800; color: #9099b0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; width: 38%; }
+.section-title {
+  font-size: 10px; color: #b0b8cc; text-transform: uppercase; font-weight: 800;
+  margin: 22px 0 10px; border-bottom: 1px solid #f0f2f8; padding-bottom: 5px; letter-spacing: 0.8px;
+}
+.completeness-bar { display: flex; gap: 4px; margin-bottom: 18px; }
+.comp-seg { height: 5px; flex: 1; border-radius: 3px; }
+.comp-seg.filled { background: var(--blue); }
+.comp-seg.empty { background: #e0e3eb; }
+.comp-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+.links-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.ext-link-btn {
+  text-decoration: none; padding: 7px 12px; border-radius: 8px; font-size: 11px;
+  background: #f4f6fb; color: var(--text); font-weight: 700; border: 1px solid #e0e3eb;
+  display: flex; align-items: center; gap: 5px; transition: all 0.15s;
+}
+.ext-link-btn:hover { border-color: var(--blue); color: var(--blue); }
+.route-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(135deg, #27ae60, #1e8449); color: white;
+  padding: 16px; text-decoration: none; border-radius: 12px;
+  font-weight: 800; font-size: 16px; margin: 18px 0; transition: all 0.2s;
+  font-family: 'Nunito', sans-serif;
+}
+.route-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(39,174,96,0.35); }
+.share-row { display: flex; gap: 8px; }
+.social-btn {
+  flex: 1; border: none; padding: 11px 8px; border-radius: 9px; cursor: pointer;
+  color: white; font-weight: 800; font-size: 11px; text-decoration: none;
+  text-align: center; font-family: 'Nunito', sans-serif; transition: opacity 0.2s;
+}
+.social-btn:hover { opacity: 0.85; }
+.demont-banner {
+  background: #fff3cd; border: 1.5px solid #ffcc02; border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 20px; font-size: 13px; font-weight: 700; color: #856404;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* OVERLAY (mobile) */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1500; }
+.overlay.active { display: block; }
+
+/* Custom marker */
+.cmarker {
+  width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid rgba(0,0,0,0.15);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25); display: flex; align-items: center;
+  justify-content: center; font-size: 10px; transition: transform 0.15s;
+}
+.cmarker.square { border-radius: 4px; }
+.cmarker.diamond { border-radius: 3px; transform: rotate(45deg); }
+.cmarker.diamond-inner { transform: rotate(-45deg); font-size: 9px; }
+.cmarker.demont { opacity: 0.45; filter: grayscale(1); }
+
+/* Autocomplete */
+.autocomplete-wrap { position: relative; }
+#sculptorInput { padding-right: 28px; }
+#sculptorClear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; display: none; }
+
+@media (max-width: 768px) {
+  #sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 88%; max-width: 320px; transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  .close-btn { display: block; }
+  .mobile-menu-btn { display: flex; }
+  .leaflet-popup-content { width: 300px !important; }
+  .popup-desc { display: none; }
+  .grid-main { grid-template-columns: 1fr; }
+  .page-content { padding: 18px 14px; }
+  #map-legend { display: none; }
+  .map-fab { right: 14px; bottom: 80px; }
+}
+</style>
 </head>
 <body>
 
 <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
+<!-- ========== SIDEBAR ========== -->
 <div id="sidebar">
-    <div class="header">
-        <div style="display:flex; align-items:center;">
-            <button class="close-sidebar-btn" onclick="toggleSidebar()">×</button>
-            <h2 style="margin:0; font-size: 20px;">Шевченко 360°</h2>
-        </div>
-        <button class="reset-btn" onclick="resetFilters()">↺ Скинути</button>
+  <div class="sidebar-header">
+    <div class="sidebar-top">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="close-btn" onclick="toggleSidebar()">×</button>
+        <div class="sidebar-title">Шевченко <span>360°</span></div>
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">↺ Скинути</button>
     </div>
-    
-    <div class="filters">
-        <div class="filter-group">
-            <label>Пошук</label>
-            <input type="text" id="search" placeholder="Місто, автор, ключове слово...">
-        </div>
-        
-        <div class="filter-group">
-            <label>Тип об'єкта</label>
-            <div id="typeTags" class="tag-container"></div>
-        </div>
-
-        <div class="filter-group">
-            <label>Вигляд (Таксономія)</label>
-            <div id="viewTags" class="tag-container"></div>
-        </div>
-
-        <div class="filter-group">
-            <label>Рік встановлення (мультивибір)</label>
-            <div id="yearCheckboxes" class="checkbox-list"></div>
-        </div>
-
-        <div class="filter-group">
-            <label>Географія</label>
-            <select id="fCountry" style="margin-bottom: 10px;"><option value="all">Усі країни</option></select>
-            <div id="regionFilterGroup">
-                <select id="fRegion"><option value="all">Усі області України</option></select>
-            </div>
-        </div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('filters',this)">🔍 Фільтри</button>
+      <button class="tab-btn" onclick="switchTab('list',this)">📋 Список</button>
+      <button class="tab-btn" onclick="switchTab('stats',this)">📊 Статистика</button>
     </div>
-    <div id="counter">Завантаження...</div>
+  </div>
+
+  <!-- FILTERS TAB -->
+  <div id="tab-filters" class="tab-panel active">
+
+    <div class="filter-section">
+      <div class="filter-label">🔎 Пошук</div>
+      <input type="text" id="search" placeholder="Місто, країна, адреса, автор...">
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">🗿 Тип об'єкта</div>
+      <div id="typeTags" class="tag-container"></div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">👁 Вигляд (таксономія)</div>
+      <div id="viewTags" class="tag-container"></div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">📅 Рік встановлення</div>
+      <div class="range-wrap" id="yearRangeWrap">
+        <div class="range-track-bg"></div>
+        <div class="range-track-fill" id="rangeTrack"></div>
+        <input type="range" id="yearMin" min="1860" max="2025" value="1860" step="1">
+        <input type="range" id="yearMax" min="1860" max="2025" value="2025" step="1">
+        <div class="range-labels">
+          <span id="yearMinLbl">1860</span>
+          <span id="yearMaxLbl">2025</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">🎨 Скульптор</div>
+      <div class="autocomplete-wrap">
+        <input type="text" id="sculptorInput" list="sculptorList" placeholder="Почніть вводити ім'я...">
+        <button id="sculptorClear" onclick="clearSculptor()">×</button>
+        <datalist id="sculptorList"></datalist>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">🌍 Географія</div>
+      <select id="fCountry" style="margin-bottom:8px">
+        <option value="all">Усі країни</option>
+      </select>
+      <div id="regionFilterGroup">
+        <select id="fRegion"><option value="all">Усі області України</option></select>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-label">⚙️ Додаткові фільтри</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="toggle-row">
+          <div class="toggle-label">📸 Тільки з фото</div>
+          <label class="toggle"><input type="checkbox" id="togglePhoto" onchange="renderMap()"><span class="slider-toggle"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">📚 Тільки з Вікіпедією</div>
+          <label class="toggle"><input type="checkbox" id="toggleWiki" onchange="renderMap()"><span class="slider-toggle"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">🚫 Показати демонтовані</div>
+          <label class="toggle"><input type="checkbox" id="toggleDemont" onchange="renderMap()"><span class="slider-toggle"></span></label>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-filters -->
+
+  <!-- LIST TAB -->
+  <div id="tab-list" class="tab-panel">
+    <div class="list-toolbar">
+      <div class="list-count" id="listCount">Завантаження...</div>
+    </div>
+    <div id="listGrid" class="list-grid"></div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div id="tab-stats" class="tab-panel">
+
+    <div class="stat-card">
+      <div class="stat-card-title">📌 Загальна статистика</div>
+      <div class="stat-numbers" id="statsNumbers"></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-title">🌍 Топ країн</div>
+      <div id="statsCountries" class="bar-chart"></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-title">🗿 Розподіл за типом</div>
+      <div id="statsTypes" class="donut-legend"></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-title">📅 По десятиліттях</div>
+      <div id="statsDecades" class="decade-chart"></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-title">✅ Повнота даних</div>
+      <div id="statsCompleteness" class="completeness-bars"></div>
+    </div>
+
+  </div><!-- /tab-stats -->
+
+  <div id="counter">Завантаження...</div>
 </div>
 
+<!-- ========== MAP ========== -->
 <div id="map-container">
-    <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Фільтри</button>
-    <div id="map"></div>
+  <button class="mobile-menu-btn" onclick="toggleSidebar()">☰ Фільтри</button>
+  <div id="map"></div>
+
+  <div class="map-fab">
+    <button class="map-btn" id="btnGeo" onclick="geolocate()" title="">
+      📍<span class="map-btn-tooltip">Моє місцезнаходження</span>
+    </button>
+    <button class="map-btn" onclick="openRandom()" title="">
+      🎲<span class="map-btn-tooltip">Випадковий об'єкт</span>
+    </button>
+  </div>
+
+  <div id="map-legend">
+    <div style="font-size:9px;font-weight:800;color:#9099b0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Тип об'єкта</div>
+  </div>
 </div>
 
+<!-- OBJECT PAGE -->
 <div id="object-page">
-    <div class="page-content">
-        <button onclick="closePage()" style="cursor:pointer; padding:10px 20px; border:1px solid #ddd; background:white; border-radius:8px; margin-bottom:20px; font-weight:bold;">← Назад</button>
-        <div id="details"></div>
-    </div>
+  <div class="page-content">
+    <button class="page-back" onclick="closePage()">← Назад до карти</button>
+    <div id="details"></div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -184,291 +493,588 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
-    const map = L.map('map', { zoomControl: false }).setView([48.5, 31.2], 5);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+// ===== MAP INIT =====
+const map = L.map('map', { zoomControl: false }).setView([48.5, 31.2], 5);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap contributors © CARTO'
+}).addTo(map);
 
-    const markers = L.markerClusterGroup({ showCoverageOnHover: false });
-    map.addLayer(markers);
+const markersCluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 50 });
+map.addLayer(markersCluster);
 
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
-    let rawData = [];
-    let activeType = 'all', activeView = 'all';
-    let selectedYears = new Set(); // Зберігаємо вибрані роки
+// ===== TYPE CONFIG =====
+const TYPE_CONFIG = {
+  "пам'ятник":                { color: '#0057b7', bg: '#0057b7', shape: 'round', label: "Пам'ятник" },
+  'погруддя':                 { color: '#c8900a', bg: '#c8900a', shape: 'round', label: 'Погруддя' },
+  'меморіальна дошка':        { color: '#27a465', bg: '#27a465', shape: 'square', label: 'Мем. дошка' },
+  'барельєф':                 { color: '#8e44ad', bg: '#8e44ad', shape: 'diamond', label: 'Барельєф' },
+  "пам'ятний знак":           { color: '#e04040', bg: '#e04040', shape: 'round', label: "Пам. знак" },
+  'стела':                    { color: '#16a085', bg: '#16a085', shape: 'round', label: 'Стела' },
+  'скульптура':               { color: '#d35400', bg: '#d35400', shape: 'round', label: 'Скульптура' },
+  'меморіальна дошка-барельєф':{ color: '#5d6d7e', bg: '#5d6d7e', shape: 'square', label: 'Дошка-барельєф' },
+  "пам'ятний хрест":          { color: '#922b21', bg: '#922b21', shape: 'round', label: "Пам. хрест" },
+  'мініатюра':                { color: '#f0b429', bg: '#f0b429', shape: 'round', label: 'Мініатюра' },
+  'горельєф':                 { color: '#2471a3', bg: '#2471a3', shape: 'round', label: 'Горельєф' },
+  'default':                  { color: '#7a8090', bg: '#7a8090', shape: 'round', label: 'Інше' },
+};
 
-    const getVal = (obj, key) => {
-        if (!obj) return "";
-        const k = Object.keys(obj).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
-        return k ? obj[k].trim() : "";
+function getTypeConf(type) {
+  return TYPE_CONFIG[type] || TYPE_CONFIG.default;
+}
+
+function createIcon(type, isDemolished) {
+  const conf = getTypeConf(type);
+  const color = isDemolished ? '#888' : conf.color;
+  const shape = isDemolished ? 'round' : conf.shape;
+  let cls = 'cmarker' + (shape === 'square' ? ' square' : '') + (shape === 'diamond' ? ' diamond' : '') + (isDemolished ? ' demont' : '');
+  const inner = shape === 'diamond' ? `<div class="diamond-inner">◆</div>` : '';
+  const html = `<div class="${cls}" style="background:${color};border-color:rgba(0,0,0,0.2)">${inner}</div>`;
+  return L.divIcon({
+    html, className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+  });
+}
+
+// Build legend
+function buildLegend() {
+  const leg = document.getElementById('map-legend');
+  const used = new Set(rawData.map(i => getVal(i, 'type')));
+  Object.entries(TYPE_CONFIG).forEach(([type, conf]) => {
+    if (type === 'default' || !used.has(type)) return;
+    const div = document.createElement('div');
+    div.className = 'leg-item';
+    div.innerHTML = `<div class="leg-marker ${conf.shape === 'square' ? 'square' : conf.shape === 'diamond' ? 'diamond' : ''}" style="background:${conf.color}"></div><span>${conf.label}</span>`;
+    leg.appendChild(div);
+  });
+  const demDiv = document.createElement('div');
+  demDiv.className = 'leg-item';
+  demDiv.innerHTML = `<div class="leg-marker demont" style="background:#888"></div><span>Демонтований</span>`;
+  leg.appendChild(demDiv);
+}
+
+// ===== DATA =====
+const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfvvWkJdsGNJBOWM3oftjwmKf4xe6q4xOqrztdTmLSYskX49VhYzU6CCzPNRFWHojuW59X4sxlbrY/pub?output=csv';
+let rawData = [];
+let activeType = 'all', activeView = 'all';
+let yearMin = 1860, yearMax = 2025;
+let currentFiltered = [];
+
+const getVal = (obj, key) => {
+  if (!obj) return '';
+  const k = Object.keys(obj).find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
+  return k ? (obj[k] || '').trim() : '';
+};
+
+const extractYear = (str) => {
+  if (!str) return null;
+  const m = str.match(/\d{4}/);
+  return m ? parseInt(m[0]) : null;
+};
+
+const NO_PHOTO_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23ebeef5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23b0b8cc'%3E🗿%3C/text%3E%3C/svg%3E`;
+
+Papa.parse(csvUrl, {
+  download: true, header: true, skipEmptyLines: true,
+  complete: (results) => {
+    rawData = results.data.filter(i => getVal(i, 'lat'));
+    init();
+  },
+  error: () => { document.getElementById('counter').innerText = 'Помилка завантаження даних'; }
+});
+
+function init() {
+  // Countries
+  const fc = document.getElementById('fCountry');
+  const fr = document.getElementById('fRegion');
+  const countryCounts = {};
+  rawData.forEach(i => { const c = getVal(i,'Country'); if(c) countryCounts[c]=(countryCounts[c]||0)+1; });
+  const sortedC = Object.keys(countryCounts).sort((a,b)=>{
+    if(a==='Україна'||a==='Ukraine') return -1;
+    if(b==='Україна'||b==='Ukraine') return 1;
+    return a.localeCompare(b,'uk');
+  });
+  sortedC.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
+
+  const regionCounts = {};
+  rawData.filter(i=>getVal(i,'Country').includes('Україна')||getVal(i,'Country')==='Ukraine')
+    .forEach(i=>{ const r=getVal(i,'Region'); if(r) regionCounts[r]=(regionCounts[r]||0)+1; });
+  Object.keys(regionCounts).sort((a,b)=>a.localeCompare(b,'uk'))
+    .forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
+
+  fc.addEventListener('change', () => {
+    const isUa = fc.value.includes('Україна') || fc.value.toLowerCase()==='ukraine';
+    document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
+    if(!isUa) fr.value='all';
+    updateUrlParams(); renderMap();
+  });
+  fr.addEventListener('change', () => { updateUrlParams(); renderMap(); });
+  document.getElementById('search').addEventListener('input', () => { updateUrlParams(); renderMap(); });
+  document.getElementById('sculptorInput').addEventListener('input', () => {
+    const v = document.getElementById('sculptorInput').value;
+    document.getElementById('sculptorClear').style.display = v ? 'block' : 'none';
+    renderMap();
+  });
+
+  // Sculptor datalist
+  const sculptors = new Set();
+  rawData.forEach(i => { const s=getVal(i,'sculptor'); if(s&&s!=='Невідомий'&&s!=='невідомий'&&s!=='масове виробництво') sculptors.add(s); });
+  const dl = document.getElementById('sculptorList');
+  [...sculptors].sort().forEach(s => { const opt=document.createElement('option'); opt.value=s; dl.appendChild(opt); });
+
+  // Year range slider
+  initYearSlider();
+
+  // Build legend
+  buildLegend();
+
+  // Load URL params
+  loadUrlParams();
+
+  // Stats
+  buildStats();
+
+  renderMap();
+
+  const id = new URLSearchParams(window.location.search).get('id');
+  if(id) openPage(id);
+}
+
+function initYearSlider() {
+  const minI = document.getElementById('yearMin');
+  const maxI = document.getElementById('yearMax');
+  const track = document.getElementById('rangeTrack');
+  const minL = document.getElementById('yearMinLbl');
+  const maxL = document.getElementById('yearMaxLbl');
+  const MIN=1860, MAX=2025;
+
+  function updateSlider() {
+    let lo = parseInt(minI.value), hi = parseInt(maxI.value);
+    if(lo > hi) { if(this===minI) lo=hi; else hi=lo; minI.value=lo; maxI.value=hi; }
+    yearMin=lo; yearMax=hi;
+    minL.textContent=lo; maxL.textContent=hi;
+    const pctLo=((lo-MIN)/(MAX-MIN))*100;
+    const pctHi=((hi-MIN)/(MAX-MIN))*100;
+    track.style.left=pctLo+'%'; track.style.right=(100-pctHi)+'%';
+    updateUrlParams(); renderMap();
+  }
+  minI.addEventListener('input', updateSlider);
+  maxI.addEventListener('input', updateSlider);
+  updateSlider.call(minI);
+}
+
+function clearSculptor() {
+  document.getElementById('sculptorInput').value='';
+  document.getElementById('sculptorClear').style.display='none';
+  renderMap();
+}
+
+// ===== URL PARAMS =====
+function updateUrlParams() {
+  const params = new URLSearchParams();
+  const s = document.getElementById('search').value;
+  const fc = document.getElementById('fCountry').value;
+  const fr = document.getElementById('fRegion').value;
+  const sc = document.getElementById('sculptorInput').value;
+  if(s) params.set('q', s);
+  if(fc!=='all') params.set('country', fc);
+  if(fr!=='all') params.set('region', fr);
+  if(activeType!=='all') params.set('type', activeType);
+  if(activeView!=='all') params.set('view', activeView);
+  if(yearMin!==1860) params.set('ymin', yearMin);
+  if(yearMax!==2025) params.set('ymax', yearMax);
+  if(sc) params.set('sculptor', sc);
+  const str = params.toString();
+  window.history.replaceState({}, '', str ? '?'+str : window.location.pathname);
+}
+
+function loadUrlParams() {
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('q')) document.getElementById('search').value = p.get('q');
+  if(p.get('country')) { document.getElementById('fCountry').value=p.get('country'); document.getElementById('fCountry').dispatchEvent(new Event('change')); }
+  if(p.get('region')) document.getElementById('fRegion').value=p.get('region');
+  if(p.get('type')) activeType = p.get('type');
+  if(p.get('view')) activeView = p.get('view');
+  if(p.get('ymin')) { document.getElementById('yearMin').value=p.get('ymin'); yearMin=parseInt(p.get('ymin')); document.getElementById('yearMinLbl').textContent=yearMin; }
+  if(p.get('ymax')) { document.getElementById('yearMax').value=p.get('ymax'); yearMax=parseInt(p.get('ymax')); document.getElementById('yearMaxLbl').textContent=yearMax; }
+  if(p.get('sculptor')) { document.getElementById('sculptorInput').value=p.get('sculptor'); document.getElementById('sculptorClear').style.display='block'; }
+}
+
+// ===== RENDER MAP =====
+function renderMap() {
+  markersCluster.clearLayers();
+  const s = document.getElementById('search').value.toLowerCase();
+  const fc = document.getElementById('fCountry').value;
+  const fr = document.getElementById('fRegion').value;
+  const sc = document.getElementById('sculptorInput').value.toLowerCase();
+  const onlyPhoto = document.getElementById('togglePhoto').checked;
+  const onlyWiki = document.getElementById('toggleWiki').checked;
+  const showDemont = document.getElementById('toggleDemont').checked;
+
+  const filtered = rawData.filter(item => {
+    const isDemolished = !!getVal(item, 'year_demont');
+    if(isDemolished && !showDemont) return false;
+    if(fc!=='all' && getVal(item,'Country')!==fc) return false;
+    if(fr!=='all' && getVal(item,'Region')!==fr) return false;
+    if(activeType!=='all' && getVal(item,'type')!==activeType) return false;
+    if(activeView!=='all') {
+      const views = getVal(item,'view').split(',').map(v=>v.trim());
+      if(!views.includes(activeView)) return false;
+    }
+    // Year filter
+    const yr = extractYear(getVal(item,'year_start'));
+    if(yr) { if(yr<yearMin||yr>yearMax) return false; }
+    // Sculptor
+    if(sc && !getVal(item,'sculptor').toLowerCase().includes(sc)) return false;
+    // Photo
+    if(onlyPhoto && !getVal(item,'Photo-GM') && !getVal(item,'other photo link')) return false;
+    // Wiki
+    if(onlyWiki && !getVal(item,'Wikipedia')) return false;
+    // Search (city, country, region, address, sculptor, description)
+    if(s) {
+      const pool = `${getVal(item,'City')} ${getVal(item,'Country')} ${getVal(item,'Region')} ${getVal(item,'Street')} ${getVal(item,'adr')} ${getVal(item,'sculptor')} ${getVal(item,'short description')}`.toLowerCase();
+      if(!pool.includes(s)) return false;
+    }
+    return true;
+  });
+
+  currentFiltered = filtered;
+
+  filtered.forEach(item => {
+    const lat = parseFloat(getVal(item,'lat').replace(',','.'));
+    const lon = parseFloat(getVal(item,'lon').replace(',','.'));
+    if(isNaN(lat)||isNaN(lon)) return;
+    const type = getVal(item,'type');
+    const isDemolished = !!getVal(item,'year_demont');
+    const conf = getTypeConf(type);
+    const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
+    let desc = getVal(item,'short description')||'';
+    if(desc.length>120) desc=desc.substring(0,120)+'...';
+    const demBadge = isDemolished ? `<div class="popup-demont-badge">⛔ ДЕМОНТОВАНО ${getVal(item,'year_demont')}</div>` : '';
+    const popupHtml = `
+      <div class="popup-card">
+        <div class="popup-photo-side">
+          <img src="${img||NO_PHOTO_SVG}" class="popup-photo" onerror="this.src='${NO_PHOTO_SVG}'">
+          <div class="popup-type-badge" style="background:${isDemolished?'#888':conf.color}">${type||"Об'єкт"}</div>
+          ${demBadge}
+        </div>
+        <div class="popup-info">
+          <h3 class="popup-title">${getVal(item,'City')}</h3>
+          <div class="popup-detail">📍 ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}</div>
+          <div class="popup-detail">📅 ${getVal(item,'year_start')||'Рік невідомий'}</div>
+          ${getVal(item,'sculptor') ? `<div class="popup-detail">🎨 ${getVal(item,'sculptor')}</div>` : ''}
+          <div class="popup-desc">${desc}</div>
+          <button class="more-btn" onclick="openPage('${getVal(item,'id')}')">ДЕТАЛЬНІШЕ →</button>
+        </div>
+      </div>`;
+    markersCluster.addLayer(L.marker([lat,lon], { icon: createIcon(type, isDemolished) }).bindPopup(popupHtml, { maxWidth:380 }));
+  });
+
+  // Counter
+  document.getElementById('counter').innerHTML = `Показано: <span>${filtered.length}</span> / ${rawData.length} об'єктів`;
+
+  // Update tags
+  updateTags('type','typeTags',activeType);
+  updateTags('view','viewTags',activeView);
+
+  // Update list
+  renderList(filtered);
+}
+
+function updateTags(key, containerId, activeVal) {
+  const counts = {};
+  rawData.forEach(i => {
+    const raw = getVal(i, key);
+    if(!raw) return;
+    if(key==='view') { raw.split(',').forEach(p=>{const t=p.trim();if(t)counts[t]=(counts[t]||0)+1;}); }
+    else counts[raw]=(counts[raw]||0)+1;
+  });
+  const container = document.getElementById(containerId);
+  container.innerHTML='';
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val,cnt]) => {
+    const conf = key==='type' ? getTypeConf(val) : null;
+    const btn = document.createElement('div');
+    btn.className=`stat-tag${activeVal===val?' active':''}`;
+    const dotHtml = conf ? `<span class="dot" style="background:${conf.color}"></span>` : '';
+    btn.innerHTML=`${dotHtml}${val}<span class="cnt">${cnt}</span>`;
+    btn.onclick=()=>{
+      if(key==='type') activeType=(activeType===val?'all':val);
+      else activeView=(activeView===val?'all':val);
+      updateUrlParams(); renderMap();
+      if(window.innerWidth<=768) toggleSidebar();
     };
+    container.appendChild(btn);
+  });
+}
 
-    // Допоміжна функція: витягує перші 4 цифри з рядка
-    const extractYear = (str) => {
-        if (!str) return null;
-        const match = str.match(/\d{4}/);
-        return match ? match[0] : null;
-    };
+// ===== LIST VIEW =====
+function renderList(items) {
+  const grid = document.getElementById('listGrid');
+  document.getElementById('listCount').textContent = `${items.length} об'єктів`;
+  grid.innerHTML='';
+  if(!items.length) {
+    grid.innerHTML='<div class="list-empty">😔 Нічого не знайдено.<br>Змініть фільтри.</div>';
+    return;
+  }
+  const MAX_LIST = 200;
+  items.slice(0,MAX_LIST).forEach(item => {
+    const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
+    const type = getVal(item,'type');
+    const conf = getTypeConf(type);
+    const isDemolished = !!getVal(item,'year_demont');
+    const card = document.createElement('div');
+    card.className='list-card';
+    card.innerHTML=`
+      <img class="list-card-img" src="${img||NO_PHOTO_SVG}" onerror="this.src='${NO_PHOTO_SVG}'" loading="lazy">
+      <div class="list-card-body">
+        <div class="list-card-city">${getVal(item,'City')||'—'}</div>
+        <div class="list-card-sub">📍 ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}</div>
+        <div class="list-card-sub">📅 ${getVal(item,'year_start')||'?'}</div>
+        <span class="list-card-type" style="background:${isDemolished?'#888':conf.color}">${isDemolished?'Демонтовано':type||'Об\'єкт'}</span>
+      </div>`;
+    card.onclick=()=>openPage(getVal(item,'id'));
+    grid.appendChild(card);
+  });
+  if(items.length>MAX_LIST) {
+    const note = document.createElement('div');
+    note.className='list-empty';
+    note.textContent=`... та ще ${items.length-MAX_LIST} об'єктів. Уточніть фільтри.`;
+    grid.appendChild(note);
+  }
+}
 
-    Papa.parse(csvUrl, {
-        download: true, header: true, skipEmptyLines: true,
-        complete: (results) => {
-            rawData = results.data.filter(i => getVal(i, 'lat'));
-            init();
-        }
-    });
+// ===== STATS =====
+function buildStats() {
+  const total = rawData.length;
+  const countries = new Set(rawData.map(i=>getVal(i,'Country'))).size;
+  const withPhoto = rawData.filter(i=>getVal(i,'Photo-GM')||getVal(i,'other photo link')).length;
+  const demont = rawData.filter(i=>getVal(i,'year_demont')).length;
 
-    function init() {
-        // --- Налаштування фільтрів країн та регіонів ---
-        const fc = document.getElementById('fCountry');
-        const fr = document.getElementById('fRegion');
-        
-        const countryCounts = {};
-        rawData.forEach(item => {
-            const c = getVal(item, 'Country');
-            if (c) countryCounts[c] = (countryCounts[c] || 0) + 1;
-        });
-        const sortedCountries = Object.keys(countryCounts).sort((a, b) => {
-            if (a === 'Україна' || a === 'Ukraine') return -1;
-            if (b === 'Україна' || b === 'Ukraine') return 1;
-            return a.localeCompare(b, 'uk');
-        });
-        const regionCounts = {};
-        rawData.filter(i => {
-            const c = getVal(i, 'Country');
-            return c === 'Україна' || c === 'Ukraine';
-        }).forEach(item => {
-            const r = getVal(item, 'Region');
-            if (r) regionCounts[r] = (regionCounts[r] || 0) + 1;
-        });
-        const sortedRegions = Object.keys(regionCounts).sort((a, b) => a.localeCompare(b, 'uk'));
-        
-        sortedCountries.forEach(c => fc.innerHTML += `<option value="${c}">${c} (${countryCounts[c]})</option>`);
-        sortedRegions.forEach(r => fr.innerHTML += `<option value="${r}">${r} (${regionCounts[r]})</option>`);
-        
-        fc.addEventListener('change', () => {
-            const isUa = fc.value.includes('Україна') || fc.value.toLowerCase() === 'ukraine';
-            document.getElementById('regionFilterGroup').style.display = isUa ? 'block' : 'none';
-            if (!isUa) fr.value = 'all';
-            renderMap();
-        });
-        fr.addEventListener('change', renderMap);
-        document.getElementById('search').addEventListener('input', renderMap);
+  document.getElementById('statsNumbers').innerHTML=`
+    <div class="stat-num-box"><div class="stat-num-val">${total}</div><div class="stat-num-label">Об'єктів</div></div>
+    <div class="stat-num-box"><div class="stat-num-val">${countries}</div><div class="stat-num-label">Країн</div></div>
+    <div class="stat-num-box"><div class="stat-num-val">${withPhoto}</div><div class="stat-num-label">З фото</div></div>
+    <div class="stat-num-box"><div class="stat-num-val">${demont}</div><div class="stat-num-label">Демонтовано</div></div>`;
 
-        // --- Ініціалізація списку років ---
-        initYearFilter();
+  // Countries
+  const cCounts={};
+  rawData.forEach(i=>{const c=getVal(i,'Country');if(c)cCounts[c]=(cCounts[c]||0)+1;});
+  const topC=Object.entries(cCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxC=topC[0][1];
+  document.getElementById('statsCountries').innerHTML=topC.map(([name,cnt])=>`
+    <div class="bar-row">
+      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(cnt/maxC)*100}%"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`).join('');
 
-        renderMap();
-        const id = new URLSearchParams(window.location.search).get('id');
-        if (id) openPage(id);
-    }
+  // Types
+  const tCounts={};
+  rawData.forEach(i=>{const t=getVal(i,'type');if(t)tCounts[t]=(tCounts[t]||0)+1;});
+  document.getElementById('statsTypes').innerHTML=Object.entries(tCounts).sort((a,b)=>b[1]-a[1]).map(([t,cnt])=>{
+    const conf=getTypeConf(t);
+    const pct=((cnt/total)*100).toFixed(1);
+    return `<div class="legend-item"><div class="legend-dot" style="background:${conf.color}"></div>${t} <span style="color:#b0b8cc">${cnt} (${pct}%)</span></div>`;
+  }).join('');
 
-    function initYearFilter() {
-        const yearCounts = {};
-        rawData.forEach(item => {
-            const y = extractYear(getVal(item, 'year_start'));
-            if (y) yearCounts[y] = (yearCounts[y] || 0) + 1;
-        });
+  // Decades
+  const dCounts={};
+  rawData.forEach(i=>{
+    const y=extractYear(getVal(i,'year_start'));
+    if(y){ const d=Math.floor(y/10)*10; dCounts[d]=(dCounts[d]||0)+1; }
+  });
+  const decades=Object.keys(dCounts).map(Number).sort((a,b)=>a-b);
+  const maxD=Math.max(...Object.values(dCounts));
+  document.getElementById('statsDecades').innerHTML=decades.map(d=>{
+    const cnt=dCounts[d]; const h=Math.round((cnt/maxD)*68);
+    const isCurrent=(d>=2020);
+    return `<div class="decade-col">
+      <div class="${isCurrent?'decade-bar gold':'decade-bar'}" style="height:${h}px" title="${d}s: ${cnt}"></div>
+      <div class="decade-lbl">${d}s</div>
+    </div>`;
+  }).join('');
 
-        // Сортуємо роки за зростанням (старіші зверху)
-        const sortedYears = Object.keys(yearCounts).sort((a, b) => parseInt(a) - parseInt(b));
-        
-        const container = document.getElementById('yearCheckboxes');
-        container.innerHTML = '';
+  // Completeness
+  const fields=[
+    {label:'Фото',     fn:i=>!!(getVal(i,'Photo-GM')||getVal(i,'other photo link'))},
+    {label:'Скульптор',fn:i=>!!getVal(i,'sculptor')},
+    {label:'Матеріал', fn:i=>!!getVal(i,'material')},
+    {label:'Висота',   fn:i=>!!getVal(i,'height')},
+    {label:'Вікіпедія',fn:i=>!!getVal(i,'Wikipedia')},
+    {label:'Рік',      fn:i=>!!getVal(i,'year_start')},
+    {label:'Вулиця',   fn:i=>!!getVal(i,'Street')},
+  ];
+  const colors=['#0057b7','#27a465','#c8900a','#8e44ad','#16a085','#e04040','#d35400'];
+  document.getElementById('statsCompleteness').innerHTML=fields.map((f,idx)=>{
+    const cnt=rawData.filter(f.fn).length; const pct=Math.round((cnt/total)*100);
+    return `<div class="comp-row">
+      <div class="comp-name">${f.label}</div>
+      <div class="comp-track"><div class="comp-fill" style="width:${pct}%;background:${colors[idx]}"></div></div>
+      <div class="comp-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
 
-        sortedYears.forEach(year => {
-            const div = document.createElement('div');
-            div.className = 'checkbox-item';
-            div.innerHTML = `
-                <input type="checkbox" value="${year}" id="cb-year-${year}">
-                <span>${year}</span>
-                <span class="count-badge">${yearCounts[year]}</span>
-            `;
-            // Додаємо слухач подій
-            const cb = div.querySelector('input');
-            div.addEventListener('click', (e) => {
-                if (e.target !== cb) cb.checked = !cb.checked;
-                if (cb.checked) selectedYears.add(year);
-                else selectedYears.delete(year);
-                renderMap();
-            });
-            container.appendChild(div);
-        });
-    }
+// ===== RESET =====
+function resetFilters() {
+  document.getElementById('search').value='';
+  document.getElementById('fCountry').value='all';
+  document.getElementById('fRegion').value='all';
+  document.getElementById('regionFilterGroup').style.display='none';
+  document.getElementById('sculptorInput').value='';
+  document.getElementById('sculptorClear').style.display='none';
+  document.getElementById('togglePhoto').checked=false;
+  document.getElementById('toggleWiki').checked=false;
+  document.getElementById('toggleDemont').checked=false;
+  document.getElementById('yearMin').value=1860;
+  document.getElementById('yearMax').value=2025;
+  yearMin=1860; yearMax=2025;
+  document.getElementById('yearMinLbl').textContent='1860';
+  document.getElementById('yearMaxLbl').textContent='2025';
+  document.getElementById('rangeTrack').style.left='0%';
+  document.getElementById('rangeTrack').style.right='0%';
+  activeType='all'; activeView='all';
+  window.history.replaceState({}, '', window.location.pathname);
+  renderMap();
+  if(window.innerWidth<=768) toggleSidebar();
+}
 
-    function renderMap() {
-        markers.clearLayers();
-        const s = document.getElementById('search').value.toLowerCase();
-        const fc = document.getElementById('fCountry').value;
-        const fr = document.getElementById('fRegion').value;
+// ===== GEOLOCATION =====
+function geolocate() {
+  const btn=document.getElementById('btnGeo');
+  if(!navigator.geolocation) { alert('Геолокація недоступна'); return; }
+  btn.style.background='#e8f0fb';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    btn.style.background='white';
+    const {latitude:lat, longitude:lng} = pos.coords;
+    map.setView([lat,lng], 10);
+    L.circleMarker([lat,lng],{radius:10,color:'#0057b7',fillColor:'#0057b7',fillOpacity:0.4,weight:3})
+      .addTo(map).bindPopup('📍 Ваше місцезнаходження').openPopup();
+  }, ()=>{ btn.style.background='white'; alert('Не вдалося визначити локацію'); });
+}
 
-        const filtered = rawData.filter(item => {
-            // Фільтр Географії
-            if (fc !== 'all' && getVal(item, 'Country') !== fc) return false;
-            if (fc.includes('Україна') && fr !== 'all' && getVal(item, 'Region') !== fr) return false;
-            
-            // Фільтр Типу
-            if (activeType !== 'all' && getVal(item, 'type') !== activeType) return false;
-            
-            // Фільтр Таксономії (мультитеги)
-            if (activeView !== 'all') {
-                const itemViews = getVal(item, 'view').split(',').map(s => s.trim());
-                if (!itemViews.includes(activeView)) return false;
-            }
+// ===== RANDOM =====
+function openRandom() {
+  if(!currentFiltered.length) return;
+  const item = currentFiltered[Math.floor(Math.random()*currentFiltered.length)];
+  openPage(getVal(item,'id'));
+}
 
-            // Фільтр Років (Мультивибір)
-            // Якщо вибрано хоча б один рік у фільтрі -> перевіряємо
-            if (selectedYears.size > 0) {
-                const itemYear = extractYear(getVal(item, 'year_start'));
-                if (!itemYear || !selectedYears.has(itemYear)) return false;
-            }
+// ===== TABS =====
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
 
-            // Фільтр Пошуку
-            const pool = `${getVal(item,'City')} ${getVal(item,'sculptor')} ${getVal(item,'short description')}`.toLowerCase();
-            return !s || pool.includes(s);
-        });
+// ===== SIDEBAR =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
+}
 
-        filtered.forEach(item => {
-            const lat = parseFloat(getVal(item, 'lat').replace(',', '.'));
-            const lon = parseFloat(getVal(item, 'lon').replace(',', '.'));
-            const img = getVal(item, 'Photo-GM') || getVal(item, 'other photo link');
-            let desc = getVal(item, 'short description') || "";
-            if(desc.length > 130) desc = desc.substring(0, 130) + '...';
+// ===== OBJECT PAGE =====
+function calcCompleteness(item) {
+  const fields=['Photo-GM','sculptor','material','height','Wikipedia','year_start','Street','view','type'];
+  const filled=fields.filter(f=>!!getVal(item,f)).length;
+  return {filled, total:fields.length};
+}
 
-            const popupHtml = `
-                <div class="popup-card">
-                    <div class="popup-info">
-                        <span class="popup-tag">${getVal(item, 'type') || 'Об\'єкт'}</span>
-                        <h3 class="popup-title">${getVal(item, 'City')}</h3>
-                        <div class="popup-detail">📍 ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}</div>
-                        <div class="popup-detail">📅 Рік: ${getVal(item, 'year_start') || '-'}</div>
-                        <div class="popup-desc">${desc}</div>
-                        <button class="more-btn" onclick="openPage('${getVal(item, 'id')}')">ДЕТАЛЬНІШЕ</button>
-                    </div>
-                    <div class="popup-photo-side">
-                        ${img ? `<img src="${img}" class="popup-photo">` : ''}
-                    </div>
-                </div>`;
-            markers.addLayer(L.marker([lat, lon]).bindPopup(popupHtml));
-        });
+function openPage(id) {
+  const item = rawData.find(i=>getVal(i,'id')===id);
+  if(!item) return;
+  window.history.pushState({}, '', `?id=${id}`);
 
-        document.getElementById('counter').innerText = `Об'єктів: ${filtered.length}`;
-        updateTags('type', 'typeTags', activeType);
-        updateTags('view', 'viewTags', activeView);
-    }
+  const lat = getVal(item,'lat').replace(',','.');
+  const lon = getVal(item,'lon').replace(',','.');
+  const city = getVal(item,'City');
+  const type = getVal(item,'type') || "Пам'ятник";
+  const conf = getTypeConf(type);
+  const isDemolished = !!getVal(item,'year_demont');
+  const url = window.location.href;
+  const shareText = encodeURIComponent(`${city}. ${type}. Шевченко 360°`);
+  const directGmLink = getVal(item,'GM');
+  const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
 
-    function updateTags(key, containerId, activeVal) {
-        const counts = {};
-        rawData.forEach(i => {
-            const raw = getVal(i, key);
-            if (!raw) return;
-            if (key === 'view') {
-                raw.split(',').forEach(part => { const tag = part.trim(); if(tag) counts[tag] = (counts[tag] || 0) + 1; });
-            } else {
-                counts[raw] = (counts[raw] || 0) + 1;
-            }
-        });
+  const cp = calcCompleteness(item);
+  const segs = Array.from({length:cp.total},(_,i)=>`<div class="comp-seg ${i<cp.filled?'filled':'empty'}"></div>`).join('');
 
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val, count]) => {
-            const btn = document.createElement('div');
-            btn.className = `stat-tag ${activeVal === val ? 'active' : ''}`;
-            btn.innerHTML = `${val} <span class="count">${count}</span>`;
-            btn.onclick = () => {
-                if(key === 'type') activeType = (activeType === val ? 'all' : val);
-                else activeView = (activeView === val ? 'all' : val);
-                renderMap();
-                if(window.innerWidth <= 768) toggleSidebar();
-            };
-            container.appendChild(btn);
-        });
-    }
+  const extLinks=[
+    {n:'Google Maps',v:directGmLink,i:'🗺️'},
+    {n:'Street View',v:getVal(item,'StreetView'),i:'👀'},
+    {n:'Wikimapia',v:getVal(item,'wikimapia'),i:'🌍'},
+    {n:'Wikipedia',v:getVal(item,'Wikipedia'),i:'📚'},
+    {n:'Kobzar.ua',v:getVal(item,'kobzar.ua'),i:'🇺🇦'},
+    {n:'OSM',v:getVal(item,'osm_id')?`https://www.openstreetmap.org/node/${getVal(item,'osm_id')}`:'',i:'🧭'},
+    {n:'Новини',v:getVal(item,'news link')||getVal(item,'news links'),i:'📰'},
+  ].filter(l=>l.v).map(l=>`<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
 
-    function resetFilters() {
-        document.getElementById('search').value = '';
-        document.getElementById('fCountry').value = 'all';
-        document.getElementById('fRegion').value = 'all';
-        activeType = 'all'; activeView = 'all';
-        
-        // Скидання років
-        selectedYears.clear();
-        document.querySelectorAll('#yearCheckboxes input').forEach(cb => cb.checked = false);
+  const img = getVal(item,'Photo-GM') || getVal(item,'other photo link');
+  const demoBanner = isDemolished ? `
+    <div class="demont-banner">⛔ Цей об'єкт було демонтовано${getVal(item,'year_demont')?' у '+getVal(item,'year_demont'):''}.</div>` : '';
 
-        renderMap();
-        if(window.innerWidth <= 768) toggleSidebar();
-    }
+  const archRow = getVal(item,'arkhitector') ? `<tr><td>Архітектор</td><td>${getVal(item,'arkhitector')}</td></tr>` : '';
+  const heightRow = getVal(item,'height') ? `<tr><td>Висота</td><td>${getVal(item,'height')} м</td></tr>` : '';
+  const safeRow = getVal(item,'safe_no') ? `<tr><td>Охор. №</td><td>${getVal(item,'safe_no')}</td></tr>` : '';
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').classList.toggle('active');
-    }
+  document.getElementById('details').innerHTML=`
+    ${demoBanner}
+    <div class="grid-main">
+      <div>
+        <img src="${img||NO_PHOTO_SVG}" class="main-img-full" onerror="this.src='${NO_PHOTO_SVG}'">
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="background:${isDemolished?'#888':conf.color};color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase">${type}</span>
+        </div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;line-height:1.15;margin-bottom:6px">${city}</h1>
+        <p style="color:var(--blue);font-weight:700;font-size:14px;margin-bottom:20px">
+          ${getVal(item,'Country')}${getVal(item,'Region')?', '+getVal(item,'Region'):''}
+        </p>
 
-    function openPage(id) {
-        const item = rawData.find(i => getVal(i, 'id') === id);
-        if (!item) return;
-        window.history.pushState({}, '', `?id=${id}`);
-        
-        const lat = getVal(item, 'lat').replace(',', '.');
-        const lon = getVal(item, 'lon').replace(',', '.');
-        const city = getVal(item, 'City');
-        const type = getVal(item, 'type') || "Пам'ятник";
-        const url = window.location.href;
-        const shareText = encodeURIComponent(`${city}. ${type}. Світова карта`);
+        <div class="comp-label">Повнота паспорту: ${cp.filled}/${cp.total} полів</div>
+        <div class="completeness-bar">${segs}</div>
 
-        const directGmLink = getVal(item, 'GM');
-        const routeUrl = directGmLink ? directGmLink : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+        <table class="passport-table">
+          <tr><td>Адреса</td><td>${getVal(item,'Street')||''} ${getVal(item,'adr')||'—'}</td></tr>
+          <tr><td>Вигляд</td><td>${getVal(item,'view')||'—'}</td></tr>
+          <tr><td>Скульптор</td><td>${getVal(item,'sculptor')||'—'}</td></tr>
+          ${archRow}
+          <tr><td>Рік</td><td>${getVal(item,'year_start')||'—'}${isDemolished?' → знесено '+getVal(item,'year_demont'):''}</td></tr>
+          <tr><td>Матеріал</td><td>${getVal(item,'material')||'—'}</td></tr>
+          ${heightRow}
+          ${safeRow}
+        </table>
 
-        const extLinks = [
-            { n: 'Google Maps', v: directGmLink, i: '🗺️' },
-            { n: 'Street View', v: getVal(item, 'StreetView'), i: '👀' },
-            { n: 'Wikimapia', v: getVal(item, 'wikimapia'), i: '🌍' },
-            { n: 'Wikipedia', v: getVal(item, 'Wikipedia'), i: '📚' },
-            { n: 'Kobzar.ua', v: getVal(item, 'kobzar.ua'), i: '🇺🇦' },
-            { n: 'OSM', v: getVal(item, 'osm_id') ? `https://www.openstreetmap.org/node/${getVal(item, 'osm_id')}` : '', i: '🧭' }
-        ].filter(l => l.v).map(l => `<a href="${l.v}" target="_blank" class="ext-link-btn">${l.i} ${l.n}</a>`).join('');
+        <div class="section-title">Опис об'єкта</div>
+        <p style="line-height:1.7;color:#444;font-size:14px;margin-bottom:22px">${getVal(item,'short description')||'Опис відсутній.'}</p>
 
-        document.getElementById('details').innerHTML = `
-            <div class="grid-main">
-                <div>
-                    <img src="${getVal(item, 'Photo-GM') || getVal(item, 'other photo link')}" class="main-img-full" onerror="this.src='https://via.placeholder.com/800x600?text=No+Photo'">
-                </div>
-                <div>
-                    <h1 style="margin:0 0 10px">${city}</h1>
-                    <p style="color:var(--blue); font-weight:bold; margin-bottom:20px;">
-                        ${getVal(item, 'Country')}${getVal(item, 'Region') ? ', ' + getVal(item, 'Region') : ''}
-                    </p>
-                    
-                    <table class="passport-table">
-                        <tr><td>Адреса</td><td>${getVal(item, 'Street')} ${getVal(item, 'adr')}</td></tr>
-                        <tr><td>Тип</td><td>${type}</td></tr>
-                        <tr><td>Вигляд</td><td>${getVal(item, 'view')}</td></tr>
-                        <tr><td>Автор</td><td>${getVal(item, 'sculptor')}</td></tr>
-                        <tr><td>Рік</td><td>${getVal(item, 'year_start')}</td></tr>
-                        <tr><td>Матеріал</td><td>${getVal(item, 'material') || '-'}</td></tr>
-                    </table>
+        <div class="section-title">Карти та каталоги</div>
+        <div class="links-grid" style="margin-bottom:10px">${extLinks||'<span style="color:#b0b8cc;font-size:12px">Посилання відсутні</span>'}</div>
 
-                    <div class="section-title">Опис об'єкта</div>
-                    <p style="line-height:1.6; color:#444; font-size:14px; margin-bottom:25px;">${getVal(item, 'short description')}</p>
+        <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
 
-                    <div class="section-title">Карти та каталоги</div>
-                    <div class="links-grid">${extLinks || '<span style="color:#999;font-size:12px">Посилання відсутні</span>'}</div>
+        <div class="share-row">
+          <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
+          <button onclick="navigator.clipboard.writeText('${url.replace(/'/g,"\\'")}');this.textContent='✓ Скопійовано!';setTimeout(()=>this.textContent='🔗 Копіювати',2000)" class="social-btn" style="background:#444">🔗 Копіювати</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('object-page').style.display='block';
+  document.getElementById('object-page').scrollTop=0;
+}
 
-                    <a href="${routeUrl}" target="_blank" class="route-btn">🚗 ПОБУДУВАТИ МАРШРУТ</a>
+function closePage() {
+  window.history.pushState({}, '', window.location.pathname);
+  document.getElementById('object-page').style.display='none';
+}
 
-                    <div class="share-row">
-                        <a href="https://t.me/share/url?url=${encodeURIComponent(url)}&text=${shareText}" target="_blank" class="social-btn" style="background:#229ED9">Telegram</a>
-                        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}" target="_blank" class="social-btn" style="background:#1877f2">Facebook</a>
-                        <button onclick="navigator.clipboard.writeText('${url}'); alert('Скопійовано!')" class="social-btn" style="background:#555">🔗 Копіювати</button>
-                    </div>
-                </div>
-            </div>`;
-        document.getElementById('object-page').style.display = 'block';
-    }
-
-    function closePage() {
-        window.history.pushState({}, '', window.location.pathname);
-        document.getElementById('object-page').style.display = 'none';
-    }
+window.addEventListener('popstate', () => {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if(id) openPage(id);
+  else document.getElementById('object-page').style.display='none';
+});
 </script>
 </body>
 </html>
