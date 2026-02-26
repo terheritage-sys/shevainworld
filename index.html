@@ -410,7 +410,7 @@ input[type="text"]:focus{border-color:var(--blue);}
   <div class="map-fab">
     <button class="map-btn" id="btnGeo" onclick="geolocate()">📍<span class="map-btn-tooltip">Моє місцезнаходження</span></button>
     <button class="map-btn" onclick="openRandom()">🎲<span class="map-btn-tooltip">Випадковий об'єкт</span></button>
-    <button class="map-btn" onclick="showGameModes()">🎯<span class="map-btn-tooltip">Відгадай де!</span></button>
+    <button class="map-btn" id="btnGameStart" onclick="showGameModes()" title="" style="opacity:0.4;pointer-events:none">🎯<span class="map-btn-tooltip">Відгадай де!</span></button>
   </div>
   <div id="map-legend"><div style="font-size:11px;font-weight:800;color:#9099b0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px">Тип об'єкта</div></div>
 </div>
@@ -598,6 +598,10 @@ function init(){
   buildLegend();
   loadUrlParams();
   buildStats();
+  updateGameModeCounts(); // рахуємо після завантаження
+  // вмикаємо кнопку гри
+  const gb=document.getElementById('btnGameStart');
+  if(gb){gb.style.opacity='';gb.style.pointerEvents='';}
   renderMap();
   const id=new URLSearchParams(window.location.search).get('id');
   if(id)openPage(id);
@@ -994,18 +998,21 @@ function calcPts(km,mode){
   return Math.max(0,Math.round(500-(skm-1000)*0.25));
 }
 
-function showGameModes(){
-  document.getElementById('gameFinal').classList.remove('active');
-  document.getElementById('game-overlay').classList.remove('active');
-  // update counts
+function updateGameModeCounts(){
   Object.keys(GAME_MODES).forEach(mode=>{
     const pool=rawData.filter(i=>(getVal(i,'Photo-GM')||getVal(i,'other photo link'))&&getVal(i,'lat')&&getVal(i,'lon')&&GAME_MODES[mode].filter(i));
     const el=document.getElementById('gmCount-'+mode);
-    if(el) el.textContent=pool.length>=5?`${pool.length} об'єктів`:`⚠️ Лише ${pool.length} з фото`;
-    // disable if not enough
-    const card=el?el.closest('.gm-card'):null;
-    if(card) card.style.opacity=pool.length>=5?'1':'0.4', card.style.pointerEvents=pool.length>=5?'auto':'none';
+    if(!el) return;
+    const ok=pool.length>=5;
+    el.textContent=ok?`${pool.length} об\u2019єктів з фото`:`⚠\uFE0F Лише ${pool.length} з фото`;
+    const card=el.closest('.gm-card');
+    if(card){card.style.opacity=ok?'1':'0.4';card.style.pointerEvents=ok?'auto':'none';}
   });
+}
+
+function showGameModes(){
+  document.getElementById('gameFinal').classList.remove('active');
+  document.getElementById('game-overlay').classList.remove('active');
   document.getElementById('game-mode-screen').classList.add('active');
 }
 
