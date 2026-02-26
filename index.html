@@ -223,10 +223,10 @@ input[type="text"]:focus{border-color:var(--blue);}
 .game-clue{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.9);}
 
 /* Answer reveal panel (replaces photo after reveal) */
-.game-reveal-panel{position:absolute;inset:0;background:#0d1117;display:none;flex-direction:column;overflow:hidden;}
+.game-reveal-panel{position:absolute;inset:0;background:#0d1117;display:none;flex-direction:column;overflow:hidden;z-index:10;}
 .game-reveal-panel.active{display:flex;}
-.reveal-img{width:100%;height:200px;object-fit:cover;flex-shrink:0;}
-.reveal-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:6px;}
+.reveal-img{width:100%;height:160px;object-fit:cover;flex-shrink:0;}
+.reveal-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:5px;}
 .reveal-type-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase;color:white;align-self:flex-start;margin-bottom:2px;}
 .reveal-city{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:white;line-height:1.2;}
 .reveal-country{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px;}
@@ -253,9 +253,8 @@ input[type="text"]:focus{border-color:var(--blue);}
 .btn-reveal{background:#1a2535;color:#8899aa;border-right:1px solid #1e2530!important;}
 .btn-reveal.enabled{color:#6aafff;}
 .btn-reveal.enabled:hover{background:#1e2d45;}
-.btn-next{background:#0057b7;color:white;display:none;}
+.btn-next{background:#0057b7;color:white;}
 .btn-next:hover{background:#0049a0;}
-.btn-next.visible{display:block;}
 .btn-show-answer{background:#1a2535;color:#6aafff;display:none;border-right:1px solid #1e2530!important;}
 .btn-show-answer.visible{display:block;}
 .btn-show-answer:hover{background:#1e2d45;}
@@ -512,7 +511,7 @@ input[type="text"]:focus{border-color:var(--blue);}
       <div class="game-action-bar" id="gameActionBar">
         <button class="btn-reveal" id="btnReveal" onclick="showAnswer()" disabled>📍 Показати відповідь</button>
         <button class="btn-confirm" id="btnConfirm" disabled onclick="confirmGuess()">Підтвердити ›</button>
-        <button class="btn-next visible" id="btnNext" onclick="nextRound()" style="display:none">Далі ›</button>
+        <button class="btn-next" id="gameNextBtn" onclick="nextRound()" style="display:none">Далі ›</button>
       </div>
     </div>
   </div>
@@ -1057,10 +1056,11 @@ function loadGameRound(){
 
   // Reset action bar
   document.getElementById('btnConfirm').disabled=true;
-  document.getElementById('btnConfirm').style.display='block';
+  document.getElementById('btnConfirm').style.display='';
   document.getElementById('btnReveal').disabled=true;
+  document.getElementById('btnReveal').style.display='';
   document.getElementById('btnReveal').className='btn-reveal';
-  document.getElementById('btnNext').style.display='none';
+  document.getElementById('gameNextBtn').style.display='none';
   document.getElementById('gameMapPrompt').style.display='block';
 
   document.getElementById('gameRoundLbl').textContent=`Раунд ${gameRound+1} / ${GAME_ROUNDS}`;
@@ -1163,11 +1163,12 @@ function revealAnswer(item,km,pts,aLat,aLon){
   document.getElementById('revealDesc').textContent=getVal(item,'short description')||'';
   document.getElementById('gameRevealPanel').classList.add('active');
 
-  // Update action bar
+  // Update action bar — hide guess buttons, show Next
   document.getElementById('btnConfirm').style.display='none';
   document.getElementById('btnReveal').style.display='none';
-  document.getElementById('btnNext').style.display='block';
-  document.getElementById('btnNext').textContent=gameRound+1>=GAME_ROUNDS?'Результати ›':'Далі ›';
+  document.getElementById('gameNextBtn').style.display='';
+  document.getElementById('gameNextBtn').textContent=gameRound+1>=GAME_ROUNDS?'Результати ›':'Далі ›';
+  document.getElementById('gameMapPrompt').style.display='none';
 }
 
 function nextRound(){
