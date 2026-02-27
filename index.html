@@ -91,22 +91,30 @@ input[type="text"]:focus{border-color:var(--blue);}
 .stat-card{background:#f8f9fc;border:1px solid #ebeef5;border-radius:var(--radius);padding:14px;}
 .stat-card-title{font-size:14px;text-transform:uppercase;font-weight:800;color:var(--muted);letter-spacing:0.8px;margin-bottom:13px;}
 .stat-numbers{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-.stat-num-box{background:white;border-radius:9px;padding:12px;text-align:center;border:1px solid #ebeef5;}
+.stat-num-box{background:white;border-radius:9px;padding:12px;text-align:center;border:1px solid #ebeef5;transition:all 0.15s;}
+.stat-num-box.clickable{cursor:pointer;}
+.stat-num-box.clickable:hover{border-color:var(--blue);box-shadow:0 3px 12px rgba(0,87,183,0.12);transform:translateY(-1px);}
 .stat-num-val{font-family:'Playfair Display',serif;font-size:34px;font-weight:900;color:var(--blue);}
 .stat-num-label{font-size:14px;color:var(--muted);font-weight:700;margin-top:3px;}
 .bar-chart{display:flex;flex-direction:column;gap:7px;}
-.bar-row{display:flex;align-items:center;gap:8px;font-size:15px;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;border-radius:6px;padding:3px 5px;margin:-3px -5px;transition:background 0.15s;}
+.bar-row:hover{background:#eef2fb;}
+.bar-row:hover .bar-name{color:var(--blue);}
 .bar-name{width:120px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
 .bar-track{flex:1;background:#e8eaf0;border-radius:3px;height:9px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:3px;background:var(--blue);transition:width 0.5s;}
 .bar-val{width:32px;text-align:right;color:var(--muted);font-weight:700;flex-shrink:0;}
 .decade-chart{display:flex;align-items:flex-end;gap:3px;height:90px;padding-bottom:22px;position:relative;}
-.decade-col{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;}
-.decade-bar{width:100%;background:var(--blue);border-radius:3px 3px 0 0;transition:height 0.5s;min-height:2px;}
+.decade-col{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;}
+.decade-col:hover .decade-bar{opacity:0.7;transform:scaleY(1.06);transform-origin:bottom;}
+.decade-col:hover .decade-lbl{color:var(--blue);font-weight:800;}
+.decade-bar{width:100%;background:var(--blue);border-radius:3px 3px 0 0;transition:height 0.5s,opacity 0.15s,transform 0.15s;min-height:2px;}
 .decade-bar.gold{background:var(--gold-dark);}
 .decade-lbl{position:absolute;bottom:-18px;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
 .donut-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;cursor:pointer;border-radius:6px;padding:4px 8px;margin:-4px -8px;transition:background 0.15s;}
+.legend-item:hover{background:#eef2fb;}
+.legend-item:hover span:first-of-type{color:var(--blue)!important;}
 .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .completeness-bars{display:flex;flex-direction:column;gap:8px;}
 .comp-row{display:flex;align-items:center;gap:9px;font-size:15px;}
@@ -809,22 +817,86 @@ function renderList(items){
   if(items.length>200){const n=document.createElement('div');n.className='list-empty';n.textContent='... та ще '+(items.length-200)+' об\'єктів. Уточніть фільтри.';grid.appendChild(n);}
 }
 
+// Helper: застосувати фільтр зі статистики і перейти на вкладку Фільтри
+function applyStatFilter(fn){
+  fn();
+  updateUrlParams();
+  renderMap();
+  // перемкнути на вкладку Фільтри
+  switchTab('filters', document.querySelector('.tab-btn'));
+}
+
 function buildStats(){
-  const total=rawData.length,countries=new Set(rawData.map(i=>getVal(i,'Country'))).size;
+  const total=rawData.length;
+  const countries=new Set(rawData.map(i=>getVal(i,'Country'))).size;
   const withPhoto=rawData.filter(i=>getVal(i,'Photo-GM')||getVal(i,'other photo link')).length;
   const demont=rawData.filter(i=>getVal(i,'year_demont')).length;
-  document.getElementById('statsNumbers').innerHTML='<div class="stat-num-box"><div class="stat-num-val">'+total+'</div><div class="stat-num-label">Об\'єктів</div></div><div class="stat-num-box"><div class="stat-num-val">'+countries+'</div><div class="stat-num-label">Країн</div></div><div class="stat-num-box"><div class="stat-num-val">'+withPhoto+'</div><div class="stat-num-label">З фото</div></div><div class="stat-num-box"><div class="stat-num-val">'+demont+'</div><div class="stat-num-label">Демонтовано</div></div>';
+
+  // Числові блоки — "З фото" і "Демонтовано" клікабельні
+  document.getElementById('statsNumbers').innerHTML=
+    `<div class="stat-num-box"><div class="stat-num-val">${total}</div><div class="stat-num-label">Об'єктів</div></div>`+
+    `<div class="stat-num-box"><div class="stat-num-val">${countries}</div><div class="stat-num-label">Країн</div></div>`+
+    `<div class="stat-num-box clickable" title="Показати тільки з фото" onclick="applyStatFilter(()=>{photoMode='with';document.querySelectorAll('#photoCtrl .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.val==='with'));})"><div class="stat-num-val">${withPhoto}</div><div class="stat-num-label">З фото 👆</div></div>`+
+    `<div class="stat-num-box clickable" title="Показати тільки демонтовані" onclick="applyStatFilter(()=>{demontMode='only';document.querySelectorAll('#demontCtrl .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.val==='only'));})"><div class="stat-num-val">${demont}</div><div class="stat-num-label">Демонтовано 👆</div></div>`;
+
+  // Країни — клік → selectCountry
   const cC={};rawData.forEach(i=>{const c=getVal(i,'Country');if(c)cC[c]=(cC[c]||0)+1;});
-  const topC=Object.entries(cC).sort((a,b)=>b[1]-a[1]).slice(0,10);const maxC=topC[0][1];
-  document.getElementById('statsCountries').innerHTML=topC.map(([n,c])=>'<div class="bar-row"><div class="bar-name" title="'+n+'">'+n+'</div><div class="bar-track"><div class="bar-fill" style="width:'+((c/maxC)*100)+'%"></div></div><div class="bar-val">'+c+'</div></div>').join('');
+  const topC=Object.entries(cC).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxC=topC[0][1];
+  document.getElementById('statsCountries').innerHTML=topC.map(([n,c])=>
+    `<div class="bar-row" onclick="applyStatFilter(()=>selectCountry('${n.replace(/'/g,"\\'")}'))" title="Фільтрувати: ${n}">
+      <div class="bar-name" title="${n}">${n}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c/maxC)*100}%"></div></div>
+      <div class="bar-val">${c}</div>
+    </div>`).join('');
+
+  // Типи — клік → activeType
   const tC={};rawData.forEach(i=>{const t=getVal(i,'type');if(t)tC[t]=(tC[t]||0)+1;});
-  document.getElementById('statsTypes').innerHTML=Object.entries(tC).sort((a,b)=>b[1]-a[1]).map(([t,c])=>{const conf=getTypeConf(t);return '<div class="legend-item"><div class="legend-dot" style="background:'+conf.color+'"></div>'+t+' <span style="color:#b0b8cc">'+c+' ('+((c/total)*100).toFixed(1)+'%)</span></div>';}).join('');
+  document.getElementById('statsTypes').innerHTML=Object.entries(tC).sort((a,b)=>b[1]-a[1]).map(([t,c])=>{
+    const conf=getTypeConf(t);
+    return `<div class="legend-item" onclick="applyStatFilter(()=>{activeType='${t.replace(/'/g,"\\'")}';updateTags('type','typeTags',activeType);})" title="Фільтрувати: ${t}">
+      <div class="legend-dot" style="background:${conf.color}"></div>
+      <span>${t}</span> <span style="color:#b0b8cc">${c} (${((c/total)*100).toFixed(1)}%)</span>
+    </div>`;
+  }).join('');
+
+  // Десятиліття — клік → yearMin/yearMax
   const dC={};rawData.forEach(i=>{const y=extractYear(getVal(i,'year_start'));if(y){const d=Math.floor(y/10)*10;dC[d]=(dC[d]||0)+1;}});
-  const decades=Object.keys(dC).map(Number).sort((a,b)=>a-b);const maxD=Math.max(...Object.values(dC));
-  document.getElementById('statsDecades').innerHTML=decades.map(d=>{const c=dC[d];const h=Math.round((c/maxD)*70);return '<div class="decade-col"><div class="'+(d>=2020?'decade-bar gold':'decade-bar')+'" style="height:'+h+'px" title="'+d+'s: '+c+'"></div><div class="decade-lbl">'+d+'s</div></div>';}).join('');
-  const fields=[{l:'Фото',fn:i=>!!(getVal(i,'Photo-GM')||getVal(i,'other photo link'))},{l:'Скульптор',fn:i=>!!getVal(i,'sculptor')},{l:'Матеріал',fn:i=>!!getVal(i,'material')},{l:'Висота',fn:i=>!!getVal(i,'height')},{l:'Вікіпедія',fn:i=>!!getVal(i,'Wikipedia')},{l:'Рік',fn:i=>!!getVal(i,'year_start')},{l:'Вулиця',fn:i=>!!getVal(i,'Street')}];
+  const decades=Object.keys(dC).map(Number).sort((a,b)=>a-b);
+  const maxD=Math.max(...Object.values(dC));
+  document.getElementById('statsDecades').innerHTML=decades.map(d=>{
+    const c=dC[d];const h=Math.round((c/maxD)*70);
+    return `<div class="decade-col" title="${d}–${d+9}: ${c} об'єктів. Клікни для фільтру"
+      onclick="applyStatFilter(()=>{
+        yearMin=${d};yearMax=${d+9};
+        document.getElementById('yearMin').value=${d};
+        document.getElementById('yearMax').value=${d+9};
+        document.getElementById('yearMinLbl').textContent='${d}';
+        document.getElementById('yearMaxLbl').textContent='${d+9}';
+        const MIN=1860,MAX=2025;
+        document.getElementById('rangeTrack').style.left=(((${d}-MIN)/(MAX-MIN))*100)+'%';
+        document.getElementById('rangeTrack').style.right=((1-((${d+9}-MIN)/(MAX-MIN)))*100)+'%';
+      })">
+      <div class="${d>=2020?'decade-bar gold':'decade-bar'}" style="height:${h}px"></div>
+      <div class="decade-lbl">${d}s</div>
+    </div>`;
+  }).join('');
+
+  // Повнота — без змін
+  const fields=[
+    {l:'Фото',fn:i=>!!(getVal(i,'Photo-GM')||getVal(i,'other photo link'))},
+    {l:'Скульптор',fn:i=>!!getVal(i,'sculptor')},
+    {l:'Матеріал',fn:i=>!!getVal(i,'material')},
+    {l:'Висота',fn:i=>!!getVal(i,'height')},
+    {l:'Вікіпедія',fn:i=>!!getVal(i,'Wikipedia')},
+    {l:'Рік',fn:i=>!!getVal(i,'year_start')},
+    {l:'Вулиця',fn:i=>!!getVal(i,'Street')}
+  ];
   const cols=['#0057b7','#27a465','#c8900a','#8e44ad','#16a085','#e04040','#d35400'];
-  document.getElementById('statsCompleteness').innerHTML=fields.map((f,i)=>{const c=rawData.filter(f.fn).length;const pct=Math.round((c/total)*100);return '<div class="comp-row"><div class="comp-name">'+f.l+'</div><div class="comp-track"><div class="comp-fill" style="width:'+pct+'%;background:'+cols[i]+'"></div></div><div class="comp-pct">'+pct+'%</div></div>';}).join('');
+  document.getElementById('statsCompleteness').innerHTML=fields.map((f,i)=>{
+    const c=rawData.filter(f.fn).length;const pct=Math.round((c/total)*100);
+    return `<div class="comp-row"><div class="comp-name">${f.l}</div><div class="comp-track"><div class="comp-fill" style="width:${pct}%;background:${cols[i]}"></div></div><div class="comp-pct">${pct}%</div></div>`;
+  }).join('');
 }
 
 function resetFilters(){
