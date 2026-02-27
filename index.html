@@ -255,6 +255,17 @@ input[type="text"]:focus{border-color:var(--blue);}
 .game-map-side{position:relative;}
 #game-map{width:100%;height:100%;}
 .game-map-prompt{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#0d1117;color:white;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:800;z-index:1000;pointer-events:none;box-shadow:var(--shadow);white-space:nowrap;}
+/* Map search box */
+.game-map-search{position:absolute;top:14px;right:14px;z-index:1001;}
+.game-map-search-inner{display:flex;gap:6px;align-items:center;}
+.game-map-search input{padding:8px 14px;border-radius:20px;border:none;font-size:13px;font-family:'Nunito',sans-serif;font-weight:700;width:180px;outline:none;box-shadow:0 2px 12px rgba(0,0,0,0.25);background:rgba(255,255,255,0.96);color:#2a2d35;}
+.game-map-search input::placeholder{color:#bbb;font-weight:600;}
+.game-search-results{position:absolute;top:42px;right:0;background:white;border-radius:10px;box-shadow:0 4px 22px rgba(0,0,0,0.22);min-width:220px;max-height:220px;overflow-y:auto;display:none;z-index:1002;}
+.game-search-results.open{display:block;}
+.game-search-item{padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;border-bottom:1px solid #f0f2f8;color:#2a2d35;transition:background 0.12s;display:flex;flex-direction:column;gap:2px;}
+.game-search-item:last-child{border-bottom:none;}
+.game-search-item:hover{background:#f0f7ff;color:var(--blue);}
+.game-search-item .gsub{font-size:11px;color:#9099b0;font-weight:600;}
 
 /* Bottom action bar on map */
 .game-action-bar{position:absolute;bottom:0;left:0;right:0;z-index:1000;display:flex;gap:0;border-top:1px solid #1e2530;}
@@ -521,6 +532,13 @@ input[type="text"]:focus{border-color:var(--blue);}
     <!-- RIGHT: map -->
     <div class="game-map-side">
       <div class="game-map-prompt" id="gameMapPrompt">👆 Клікни де стоїть цей пам'ятник</div>
+      <!-- Map navigation search -->
+      <div class="game-map-search" id="gameMapSearch">
+        <div class="game-map-search-inner">
+          <input type="text" id="gameSearchInput" placeholder="🔎 Знайти країну / місто..." autocomplete="off" oninput="onGameSearch(this.value)" onkeydown="onGameSearchKey(event)">
+        </div>
+        <div class="game-search-results" id="gameSearchResults"></div>
+      </div>
       <div id="game-map"></div>
       <div class="game-action-bar" id="gameActionBar">
         <button class="btn-reveal" id="btnReveal" onclick="showAnswer()" disabled>📍 Показати відповідь</button>
@@ -1116,6 +1134,7 @@ function startGameMode(mode){
     L.control.zoom({position:'bottomright'}).addTo(gameMap);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© CARTO'}).addTo(gameMap);
     gameMap.on('click',onGameMapClick);
+    gameMap.on('click',()=>document.getElementById('gameSearchResults').classList.remove('open'));
   } else {
     gameMap.setView([ms.lat,ms.lon],ms.zoom);
   }
@@ -1130,6 +1149,9 @@ function buildProgressDots(){
 
 function loadGameRound(){
   gameGuessLatLng=null; gameAnswerRevealed=false;
+  // скинути пошук
+  const si=document.getElementById('gameSearchInput');
+  if(si){si.value='';document.getElementById('gameSearchResults').classList.remove('open');}
   if(gameGuessMarker){gameMap.removeLayer(gameGuessMarker);gameGuessMarker=null;}
   if(gameActualMarker){gameMap.removeLayer(gameActualMarker);gameActualMarker=null;}
   if(gameLine){gameMap.removeLayer(gameLine);gameLine=null;}
@@ -1283,7 +1305,99 @@ function openCurrentOnMap(){
   openPage(getVal(item,'id'));
 }
 
-function closeGame(){
+// ===== GAME MAP SEARCH =====
+// Статичний список країн + координати для навігації
+const GEO_PLACES=[
+  {n:'Австралія',lat:-25,lon:134,z:4},{n:'Австрія',lat:47.5,lon:14,z:6},
+  {n:'Азербайджан',lat:40.4,lon:47.6,z:6},{n:'Аргентина',lat:-34,lon:-64,z:4},
+  {n:'Бельгія',lat:50.5,lon:4.5,z:7},{n:'Білорусь',lat:53.5,lon:28,z:6},
+  {n:'Болгарія',lat:42.7,lon:25.5,z:6},{n:'Бразилія',lat:-10,lon:-55,z:4},
+  {n:'Велика Британія',lat:54,lon:-2,z:5},{n:'Вірменія',lat:40.1,lon:45,z:7},
+  {n:'Грузія',lat:42,lon:43.5,z:6},{n:'Греція',lat:39,lon:22,z:6},
+  {n:'Естонія',lat:58.5,lon:25,z:7},{n:'Єгипет',lat:26,lon:30,z:5},
+  {n:'Ізраїль',lat:31.5,lon:35,z:7},{n:'Іспанія',lat:40,lon:-4,z:5},
+  {n:'Казахстан',lat:48,lon:68,z:4},{n:'Канада',lat:56,lon:-96,z:4},
+  {n:'Киргизстан',lat:41.2,lon:74.5,z:6},{n:'Китай',lat:35,lon:105,z:4},
+  {n:'Латвія',lat:56.8,lon:24.6,z:7},{n:'Литва',lat:55.8,lon:24,z:7},
+  {n:'Молдова',lat:47,lon:29,z:7},{n:'Монголія',lat:46,lon:105,z:4},
+  {n:'Нідерланди',lat:52.3,lon:5.3,z:7},{n:'Німеччина',lat:51,lon:10,z:5},
+  {n:'Норвегія',lat:64,lon:14,z:5},{n:'Польща',lat:52,lon:19,z:6},
+  {n:'Португалія',lat:39.5,lon:-8,z:6},{n:'росія',lat:60,lon:90,z:3},
+  {n:'Румунія',lat:45.8,lon:24.9,z:6},{n:'Сербія',lat:44,lon:21,z:6},
+  {n:'Словаччина',lat:48.7,lon:19.7,z:7},{n:'США',lat:38,lon:-97,z:4},
+  {n:'Туреччина',lat:39,lon:35,z:5},{n:'Угорщина',lat:47,lon:19,z:7},
+  {n:'Узбекистан',lat:41,lon:64,z:5},{n:'Україна',lat:49,lon:31,z:5},
+  {n:'Фінляндія',lat:64,lon:26,z:5},{n:'Франція',lat:46,lon:2,z:5},
+  {n:'Хорватія',lat:45.1,lon:15.5,z:7},{n:'Чехія',lat:49.8,lon:15.5,z:6},
+  {n:'Швейцарія',lat:46.8,lon:8.2,z:7},{n:'Швеція',lat:62,lon:15,z:5},
+  // Великі міста
+  {n:'Київ',sub:'Україна',lat:50.45,lon:30.52,z:11},
+  {n:'Харків',sub:'Україна',lat:49.99,lon:36.23,z:11},
+  {n:'Львів',sub:'Україна',lat:49.84,lon:24.03,z:12},
+  {n:'Одеса',sub:'Україна',lat:46.48,lon:30.73,z:12},
+  {n:'Тернопіль',sub:'Україна',lat:49.55,lon:25.6,z:12},
+  {n:'Нью-Йорк',sub:'США',lat:40.71,lon:-74.01,z:11},
+  {n:'Вашингтон',sub:'США',lat:38.9,lon:-77.04,z:11},
+  {n:'Торонто',sub:'Канада',lat:43.65,lon:-79.38,z:11},
+  {n:'Буенос-Айрес',sub:'Аргентина',lat:-34.6,lon:-58.4,z:11},
+  {n:'Лондон',sub:'Велика Британія',lat:51.51,lon:-0.13,z:11},
+  {n:'Берлін',sub:'Німеччина',lat:52.52,lon:13.4,z:11},
+  {n:'Варшава',sub:'Польща',lat:52.23,lon:21.01,z:11},
+  {n:'Прага',sub:'Чехія',lat:50.08,lon:14.44,z:12},
+  {n:'Єреван',sub:'Вірменія',lat:40.18,lon:44.51,z:12},
+  {n:'Тбілісі',sub:'Грузія',lat:41.69,lon:44.83,z:12},
+  {n:'Алмати',sub:'Казахстан',lat:43.25,lon:76.95,z:11},
+  {n:'Стамбул',sub:'Туреччина',lat:41.01,lon:28.98,z:11},
+  {n:'Анталія',sub:'Туреччина',lat:36.9,lon:30.7,z:12},
+  {n:'Пекін',sub:'Китай',lat:39.9,lon:116.4,z:11},
+  {n:'Тель-Авів',sub:'Ізраїль',lat:32.08,lon:34.78,z:12},
+];
+
+let gameSearchHighlight=-1;
+
+function onGameSearch(val){
+  const res=document.getElementById('gameSearchResults');
+  const q=val.trim().toLowerCase();
+  if(!q){res.classList.remove('open');res.innerHTML='';gameSearchHighlight=-1;return;}
+  const matches=GEO_PLACES.filter(p=>p.n.toLowerCase().includes(q)||(p.sub||'').toLowerCase().includes(q)).slice(0,10);
+  if(!matches.length){res.innerHTML='<div class="game-search-item" style="color:#9099b0">Не знайдено</div>';res.classList.add('open');return;}
+  res.innerHTML=matches.map((p,i)=>
+    `<div class="game-search-item" data-idx="${i}" onmousedown="gameSearchGo(${i},'${p.n.replace(/'/g,"\\'")}')">
+      ${p.n}${p.sub?`<span class="gsub">${p.sub}</span>`:''}
+    </div>`).join('');
+  res._matches=matches;
+  res.classList.add('open');
+  gameSearchHighlight=-1;
+}
+
+function onGameSearchKey(e){
+  const res=document.getElementById('gameSearchResults');
+  const items=res.querySelectorAll('.game-search-item[data-idx]');
+  if(e.key==='ArrowDown'){e.preventDefault();gameSearchHighlight=Math.min(gameSearchHighlight+1,items.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();gameSearchHighlight=Math.max(gameSearchHighlight-1,0);}
+  else if(e.key==='Enter'){e.preventDefault();if(gameSearchHighlight>=0&&res._matches)gameSearchGo(gameSearchHighlight,res._matches[gameSearchHighlight].n);return;}
+  else if(e.key==='Escape'){res.classList.remove('open');return;}
+  items.forEach((el,i)=>el.style.background=i===gameSearchHighlight?'#f0f7ff':'');
+}
+
+function gameSearchGo(idx,name){
+  const res=document.getElementById('gameSearchResults');
+  const place=res._matches&&res._matches[idx];
+  if(!place)return;
+  gameMap.setView([place.lat,place.lon],place.z||6,{animate:true,duration:0.8});
+  document.getElementById('gameSearchInput').value=name;
+  res.classList.remove('open');
+  // Скинути поле через секунду щоб не заважало
+  setTimeout(()=>{document.getElementById('gameSearchInput').value='';},1200);
+}
+
+// Закривати dropdown при кліку на карту
+function closeGameSearch(){
+  document.getElementById('gameSearchResults').classList.remove('open');
+  document.getElementById('gameSearchInput').value='';
+}
+
+
   document.getElementById('game-overlay').classList.remove('active');
   document.getElementById('game-mode-screen').classList.remove('active');
   document.getElementById('gameFinal').classList.remove('active');
