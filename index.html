@@ -336,6 +336,14 @@ input[type="text"]:focus{border-color:var(--blue);}
       <input type="text" id="search" placeholder="Місто, країна, автор...">
     </div>
     <div class="filter-section">
+      <div class="filter-label">🌍 Країна</div>
+      <div id="countryTags" class="tag-scroll"></div>
+      <div id="regionPanel">
+        <div class="filter-label" style="font-size:13px;color:var(--blue);margin-bottom:7px;margin-top:4px">📍 Область</div>
+        <div id="regionTags" class="tag-scroll"></div>
+      </div>
+    </div>
+    <div class="filter-section">
       <div class="filter-label">🗿 Тип об'єкта</div>
       <div id="typeTags" class="tag-container"></div>
     </div>
@@ -359,14 +367,6 @@ input[type="text"]:focus{border-color:var(--blue);}
         <input type="text" id="sculptorInput" list="sculptorList" placeholder="Ім'я скульптора...">
         <button id="sculptorClear" onclick="clearSculptor()">×</button>
         <datalist id="sculptorList"></datalist>
-      </div>
-    </div>
-    <div class="filter-section">
-      <div class="filter-label">🌍 Країна</div>
-      <div id="countryTags" class="tag-scroll"></div>
-      <div id="regionPanel">
-        <div class="filter-label" style="font-size:13px;color:var(--blue);margin-bottom:7px;margin-top:4px">📍 Область</div>
-        <div id="regionTags" class="tag-scroll"></div>
       </div>
     </div>
     <div class="filter-section">
