@@ -625,19 +625,19 @@ Papa.parse(csvUrl,{download:true,header:true,skipEmptyLines:true,
 });
 
 function init(){
+  // зберегти id ДО того як initYearSlider/loadUrlParams змінять URL
+  const pendingId=new URLSearchParams(window.location.search).get('id');
   buildCountryTags();
   buildSculptorList();
   initYearSlider();
   buildLegend();
   loadUrlParams();
   buildStats();
-  updateGameModeCounts(); // рахуємо після завантаження
-  // вмикаємо кнопку гри
+  updateGameModeCounts();
   const gb=document.getElementById('btnGameStart');
   if(gb){gb.style.opacity='';gb.style.pointerEvents='';}
   renderMap();
-  const id=new URLSearchParams(window.location.search).get('id');
-  if(id)openPage(id);
+  if(pendingId)openPage(pendingId);
 }
 
 function buildCountryTags(){
